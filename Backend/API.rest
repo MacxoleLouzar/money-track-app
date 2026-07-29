@@ -1,0 +1,333 @@
+### Base URL
+@baseUrl = http://localhost:5000/api
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhNmE1ZDU0YjUyMWMyM2ZmNzc3Y2I5NCIsImlhdCI6MTc4NTM1NTcxMiwiZXhwIjoxNzg1OTYwNTEyfQ.wBR3ntvwJ80IM8w9DBsctA4FAak6JEmjxDvcCiLlfvQ
+
+
+# ─────────────────────────────────────────
+# AUTH
+# ─────────────────────────────────────────
+
+### Sign Up
+POST {{baseUrl}}/auth/signup
+Content-Type: application/json
+
+{
+  "name": "Macxole",
+  "email": "macxole@example.com",
+  "password": "password123"
+}
+
+###
+
+### Sign In
+POST {{baseUrl}}/auth/signin
+Content-Type: application/json
+
+{
+  "email": "macxole@example.com",
+  "password": "password123"
+}
+
+###
+
+# ─────────────────────────────────────────
+# GROCERIES
+# ─────────────────────────────────────────
+
+### Add Grocery
+POST {{baseUrl}}/expenses/grocery
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "item": "Milk",
+  "quantity": 2,
+  "price": 35.99,
+  "store": "Checkers",
+  "onSale": true,
+  "date": "2025-01-15"
+}
+
+###
+
+### Get All Groceries
+GET {{baseUrl}}/expenses/grocery
+Authorization: Bearer {{token}}
+
+###
+
+### Delete Grocery
+DELETE {{baseUrl}}/expenses/grocery/EXPENSE_ID_HERE
+Authorization: Bearer {{token}}
+
+###
+
+# ─────────────────────────────────────────
+# TRANSPORT
+# ─────────────────────────────────────────
+
+### Add Transport
+POST {{baseUrl}}/expenses/transport
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "from": "Home",
+  "destination": "Office",
+  "mode": "Uber",
+  "price": 85.00,
+  "date": "2025-01-15"
+}
+
+###
+
+### Get All Transport
+GET {{baseUrl}}/expenses/transport
+Authorization: Bearer {{token}}
+
+###
+
+### Delete Transport
+DELETE {{baseUrl}}/expenses/transport/EXPENSE_ID_HERE
+Authorization: Bearer {{token}}
+
+###
+
+# ─────────────────────────────────────────
+# LUNCH
+# ─────────────────────────────────────────
+
+### Add Lunch
+POST {{baseUrl}}/expenses/lunch
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "foodType": "Burger",
+  "store": "Steers",
+  "price": 89.90,
+  "date": "2025-01-15"
+}
+
+###
+
+### Get All Lunch
+GET {{baseUrl}}/expenses/lunch
+Authorization: Bearer {{token}}
+
+###
+
+### Delete Lunch
+DELETE {{baseUrl}}/expenses/lunch/EXPENSE_ID_HERE
+Authorization: Bearer {{token}}
+
+###
+
+# ─────────────────────────────────────────
+# GARMENTS
+# ─────────────────────────────────────────
+
+### Add Garment
+POST {{baseUrl}}/expenses/garment
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "item": "Jeans",
+  "store": "Edgars",
+  "price": 499.99,
+  "quantity": 1,
+  "date": "2025-01-15"
+}
+
+###
+
+### Get All Garments
+GET {{baseUrl}}/expenses/garment
+Authorization: Bearer {{token}}
+
+###
+
+### Delete Garment
+DELETE {{baseUrl}}/expenses/garment/EXPENSE_ID_HERE
+Authorization: Bearer {{token}}
+
+###
+
+# ─────────────────────────────────────────
+# FURNITURE
+# ─────────────────────────────────────────
+
+### Add Furniture
+POST {{baseUrl}}/expenses/furniture
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "item": "Office Chair",
+  "store": "Makro",
+  "price": 1299.00,
+  "quantity": 1,
+  "date": "2025-01-15"
+}
+
+###
+
+### Get All Furniture
+GET {{baseUrl}}/expenses/furniture
+Authorization: Bearer {{token}}
+
+###
+
+### Delete Furniture
+DELETE {{baseUrl}}/expenses/furniture/EXPENSE_ID_HERE
+Authorization: Bearer {{token}}
+
+###
+
+# ─────────────────────────────────────────
+# RENT
+# ─────────────────────────────────────────
+
+### Add Rent
+POST {{baseUrl}}/expenses/rent
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "price": 6500.00,
+  "date": "2025-01-01"
+}
+
+###
+
+### Get All Rent
+GET {{baseUrl}}/expenses/rent
+Authorization: Bearer {{token}}
+
+###
+
+### Delete Rent
+DELETE {{baseUrl}}/expenses/rent/EXPENSE_ID_HERE
+Authorization: Bearer {{token}}
+
+###
+
+# ─────────────────────────────────────────
+# COSMETICS
+# ─────────────────────────────────────────
+
+### Add Cosmetic
+POST {{baseUrl}}/expenses/cosmetic
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "item": "Moisturiser",
+  "price": 149.99,
+  "quantity": 1,
+  "store": "Clicks",
+  "date": "2025-01-15"
+}
+
+###
+
+### Get All Cosmetics
+GET {{baseUrl}}/expenses/cosmetic
+Authorization: Bearer {{token}}
+
+###
+
+### Delete Cosmetic
+DELETE {{baseUrl}}/expenses/cosmetic/EXPENSE_ID_HERE
+Authorization: Bearer {{token}}
+
+###
+
+# ─────────────────────────────────────────
+# TAKEOUTS
+# ─────────────────────────────────────────
+
+### Add Takeout
+POST {{baseUrl}}/expenses/takeout
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "item": "Pizza",
+  "store": "Romans Pizza",
+  "price": 159.00,
+  "date": "2025-01-15"
+}
+
+###
+
+### Get All Takeouts
+GET {{baseUrl}}/expenses/takeout
+Authorization: Bearer {{token}}
+
+###
+
+### Delete Takeout
+DELETE {{baseUrl}}/expenses/takeout/EXPENSE_ID_HERE
+Authorization: Bearer {{token}}
+
+###
+
+# ─────────────────────────────────────────
+# DATES
+# ─────────────────────────────────────────
+
+### Add Date Expense
+POST {{baseUrl}}/expenses/date
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "restaurant": "Nandos",
+  "foodDescription": "2x Chicken meals + drinks",
+  "price": 380.00,
+  "date": "2025-01-14"
+}
+
+###
+
+### Get All Date Expenses
+GET {{baseUrl}}/expenses/date
+Authorization: Bearer {{token}}
+
+###
+
+### Delete Date Expense
+DELETE {{baseUrl}}/expenses/date/EXPENSE_ID_HERE
+Authorization: Bearer {{token}}
+
+###
+
+# ─────────────────────────────────────────
+# SUMMARIES / ANALYTICS
+# ─────────────────────────────────────────
+
+### Daily Summary
+GET {{baseUrl}}/expenses/summary/daily
+Authorization: Bearer {{token}}
+
+###
+
+### Weekly Summary
+GET {{baseUrl}}/expenses/summary/weekly
+Authorization: Bearer {{token}}
+
+###
+
+### Monthly Summary
+GET {{baseUrl}}/expenses/summary/monthly
+Authorization: Bearer {{token}}
+
+###
+
+### Yearly Summary
+GET {{baseUrl}}/expenses/summary/yearly
+Authorization: Bearer {{token}}
+
+###
