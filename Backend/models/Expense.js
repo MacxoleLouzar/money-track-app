@@ -3,20 +3,21 @@ import mongoose from 'mongoose';
 const base = {
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   date: { type: Date, default: Date.now },
+  image: String,
+  slip: String,
 };
 
 const grocerySchema = new mongoose.Schema({
   ...base,
   item: String, quantity: Number, price: Number,
   store: String, onSale: Boolean,
-  image: String, slip: String,
 });
 
 const transportSchema = new mongoose.Schema({
   ...base,
   from: String, destination: String,
   mode: { type: String, enum: ['Uber', 'Taxi', 'Train', 'Flight'] },
-  price: Number, slip: String,
+  price: Number,
 });
 
 const lunchSchema = new mongoose.Schema({
@@ -26,13 +27,12 @@ const lunchSchema = new mongoose.Schema({
 
 const garmentSchema = new mongoose.Schema({
   ...base,
-  item: String, store: String, price: Number, quantity: Number, slip: String,
+  item: String, store: String, price: Number, quantity: Number,
 });
 
 const furnitureSchema = new mongoose.Schema({
   ...base,
   item: String, store: String, price: Number, quantity: Number,
-  image: String, slip: String,
 });
 
 const rentSchema = new mongoose.Schema({
@@ -42,7 +42,7 @@ const rentSchema = new mongoose.Schema({
 
 const cosmeticSchema = new mongoose.Schema({
   ...base,
-  item: String, price: Number, quantity: Number, store: String, image: String,
+  item: String, price: Number, quantity: Number, store: String,
 });
 
 const takeoutSchema = new mongoose.Schema({
@@ -53,7 +53,6 @@ const takeoutSchema = new mongoose.Schema({
 const dateSchema = new mongoose.Schema({
   ...base,
   restaurant: String, foodDescription: String, price: Number,
-  image: String, slip: String,
 });
 
 export const Grocery = mongoose.model('Grocery', grocerySchema);
