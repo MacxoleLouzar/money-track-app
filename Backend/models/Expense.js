@@ -10,7 +10,7 @@ const base = {
 const grocerySchema = new mongoose.Schema({
   ...base,
   item: String, quantity: Number, price: Number,
-  store: String, onSale: Boolean,
+  store: String, onSale: Boolean, size: String, sizeValue: Number,
 });
 
 const transportSchema = new mongoose.Schema({

@@ -63,20 +63,29 @@ export const deleteExpense = async (req, res) => {
   }
 };
 
-const getPeriodFilter = (period, userId) => {
-  const now = new Date();
-  let start;
-  if (period === 'daily') start = new Date(now.setHours(0, 0, 0, 0));
-  else if (period === 'weekly') { start = new Date(now); start.setDate(now.getDate() - 7); }
-  else if (period === 'monthly') start = new Date(now.getFullYear(), now.getMonth(), 1);
-  else if (period === 'yearly') start = new Date(now.getFullYear(), 0, 1);
-  return { user: userId, date: { $gte: start } };
+const getPeriodFilter = (period, userId, dateParam) => {
+  const ref = dateParam ? new Date(dateParam) : new Date();
+  let start, end;
+  if (period === 'daily') {
+    start = new Date(ref); start.setHours(0, 0, 0, 0);
+    end = new Date(ref); end.setHours(23, 59, 59, 999);
+  } else if (period === 'weekly') {
+    start = new Date(ref); start.setDate(ref.getDate() - 6); start.setHours(0, 0, 0, 0);
+    end = new Date(ref); end.setHours(23, 59, 59, 999);
+  } else if (period === 'monthly') {
+    start = new Date(ref.getFullYear(), ref.getMonth(), 1);
+    end = new Date(ref.getFullYear(), ref.getMonth() + 1, 0, 23, 59, 59, 999);
+  } else if (period === 'yearly') {
+    start = new Date(ref.getFullYear(), 0, 1);
+    end = new Date(ref.getFullYear(), 11, 31, 23, 59, 59, 999);
+  }
+  return { user: userId, date: { $gte: start, $lte: end } };
 };
 
 export const getSummary = async (req, res) => {
   try {
     const { period } = req.params;
-    const filter = getPeriodFilter(period, req.user.id);
+    const filter = getPeriodFilter(period, req.user.id, req.query.date);
     const results = await Promise.all(
       Object.entries(models).map(async ([name, Model]) => {
         const items = await Model.find(filter);

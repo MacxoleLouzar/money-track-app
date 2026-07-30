@@ -1,0 +1,144 @@
+.layout { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 240px;
+  background: #111827;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  position: fixed;
+  top: 0; left: 0;
+  height: 100vh;
+  z-index: 100;
+  transition: transform 0.3s;
+}
+
+.sidebar-logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #a8d8ea;
+  margin-bottom: 2rem;
+  padding-left: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Sidebar nav scrolls vertically if items overflow */
+.sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #374151 transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar { width: 4px; }
+.sidebar-nav::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+  color: #d1d5db;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.15s, color 0.15s;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.nav-item:hover { background: #1f2937; color: #fff; }
+.nav-item.active { background: #a8d8ea; color: #111827; font-weight: 600; }
+
+.sidebar-footer {
+  border-top: 1px solid #374151;
+  padding-top: 1rem;
+  margin-top: 1rem;
+  flex-shrink: 0;
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+  color: #f87171;
+  cursor: pointer;
+  font-size: 0.9rem;
+  background: none;
+  border: none;
+  width: 100%;
+  transition: background 0.15s;
+}
+
+.logout-btn:hover { background: #1f2937; }
+
+.main-content {
+  margin-left: 240px;
+  flex: 1;
+  padding: 2rem;
+  min-height: 100vh;
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 199;
+}
+
+.sidebar-overlay.open { display: block; }
+
+/* Mobile bottom bar — hidden on desktop */
+.mobile-bottom-bar { display: none; }
+
+@media (max-width: 768px) {
+  .sidebar { transform: translateX(-100%); z-index: 200; }
+  .sidebar.open { transform: translateX(0); }
+
+  .main-content {
+    margin-left: 0;
+    padding: 1rem;
+    padding-bottom: 5rem; /* space above bottom bar */
+  }
+
+  /* Bottom bar: Home + Menu fixed at bottom */
+  .mobile-bottom-bar {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 201;
+    background: #111827;
+    border-top: 1px solid #1f2937;
+    height: 56px;
+  }
+
+  .bottom-bar-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.2rem;
+    color: #9ca3af;
+    font-size: 0.7rem;
+    font-weight: 500;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+
+  .bottom-bar-btn:hover,
+  .bottom-bar-btn.active { color: #a8d8ea; }
+}
