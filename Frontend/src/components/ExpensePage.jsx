@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Image, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, Image, ChevronLeft, ChevronRight, ScanLine } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Modal from './Modal';
 import FileField from './FileField';
+import BarcodeScanner from './BarcodeScanner';
 import '../css/dashboard.css';
 
 const API = '/api/expenses';
 const PAGE_SIZE = 10;
 
-export default function ExpensePage({ category, title, fields }) {
+export default function ExpensePage({ category, title, fields, scannable = false }) {
   const { token } = useAuth();
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,6 +19,7 @@ export default function ExpensePage({ category, title, fields }) {
   const [files, setFiles] = useState({});
   const [saving, setSaving] = useState(false);
   const [page, setPage] = useState(1);
+  const [showScanner, setShowScanner] = useState(false);
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -32,6 +34,18 @@ export default function ExpensePage({ category, title, fields }) {
   useEffect(() => { fetchExpenses(); }, [category]);
 
   const openAdd = () => { setEditing(null); setForm({}); setFiles({}); setShowModal(true); };
+
+  const handleScan = (value) => {
+    setShowScanner(false);
+    setEditing(null);
+    setFiles({});
+    // Fill the first text field + barcode with the scanned value
+    const firstTextField = fields.find(f => !f.type || f.type === 'text');
+    const prefill = { barcode: value };
+    if (firstTextField) prefill[firstTextField.name] = value;
+    setForm(prefill);
+    setShowModal(true);
+  };
   const openEdit = (exp) => { setEditing(exp); setForm({ ...exp }); setFiles({}); setShowModal(true); };
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -81,9 +95,16 @@ export default function ExpensePage({ category, title, fields }) {
           <h1 className="page-title">{title}</h1>
           <p className="page-subtitle">{expenses.length} record{expenses.length !== 1 ? 's' : ''}</p>
         </div>
-        <button className="btn btn-primary" onClick={openAdd}>
-          <Plus size={16} /> Add {title}
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {scannable && (
+            <button className="btn btn-outline" onClick={() => setShowScanner(true)}>
+              <ScanLine size={16} /> Scan
+            </button>
+          )}
+          <button className="btn btn-primary" onClick={openAdd}>
+            <Plus size={16} /> Add {title}
+          </button>
+        </div>
       </div>
 
       <div className="card">
@@ -151,6 +172,8 @@ export default function ExpensePage({ category, title, fields }) {
           </>
         )}
       </div>
+
+      {showScanner && <BarcodeScanner onScan={handleScan} onClose={() => setShowScanner(false)} />}
 
       {showModal && (
         <Modal title={editing ? `Edit ${title}` : `Add ${title}`} onClose={() => setShowModal(false)}>

@@ -2,6 +2,7 @@ import ExpensePage from '../components/ExpensePage';
 
 const fields = [
   { name: 'item', label: 'Item' },
+  { name: 'barcode', label: 'Barcode', full: true },
   { name: 'quantity', label: 'Qty', type: 'number' },
   { name: 'size', label: 'Size', type: 'select', options: ['KG', 'Grams', 'Liters', 'ML', 'Units', 'Pieces', 'Pack'] },
   { name: 'sizeValue', label: 'Size Amount', type: 'number' },
@@ -13,5 +14,5 @@ const fields = [
 ];
 
 export default function Grocery() {
-  return <ExpensePage category="grocery" title="Groceries" fields={fields} />;
+  return <ExpensePage category="grocery" title="Groceries" fields={fields} scannable />;
 }

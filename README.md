@@ -13,15 +13,19 @@ A full-stack personal expense tracker to monitor daily spending across multiple 
 | Auth | JWT + bcryptjs |
 | File Uploads | Multer |
 | Frontend | React + Vite |
+| Scanning | html5-qrcode |
 
 ---
 
 ## Features
 
 - 🔐 Sign Up / Sign In per user (JWT auth)
-- 📦 9 expense categories with full field tracking
+- 📦 10 expense categories with full field tracking
 - 📎 File uploads: images, slips, invoices (jpeg, png, pdf, docx)
-- 📊 Analytics: Daily, Weekly, Monthly, Yearly summaries
+- 📊 Analytics: Daily, Weekly, Monthly, Yearly summaries with custom date picker
+- 📱 Mobile-first layout: floating hamburger, bottom nav bar (Home + Menu), scrollable sidebar
+- 📄 Pagination (10 records per page) with horizontal + vertical table scroll
+- 🔍 Barcode & QR code scanning in all categories — via camera or image upload
 - 🗂️ REST API tested via `API.rest`
 
 ---
@@ -30,15 +34,16 @@ A full-stack personal expense tracker to monitor daily spending across multiple 
 
 | Category | Fields |
 |----------|--------|
-| Groceries | Item, Quantity, Price, Store, On Sale, Image, Slip |
-| Transport | From, Destination, Mode (Uber/Taxi/Train/Flight), Price, Slip |
-| Lunch | Food Type, Store, Price |
-| Garments | Item, Store, Price, Quantity, Slip |
-| Furniture | Item, Store, Price, Quantity, Image, Slip |
-| Rent | Date, Price, Invoice |
-| Cosmetics | Item, Price, Quantity, Store, Image |
-| Takeouts | Item, Store, Price |
-| Dates | Restaurant, Food Description, Price, Image, Slip |
+| Groceries | Item, Barcode, Quantity, Size (KG/Grams/Liters/ML/Units/Pieces/Pack), Size Amount, Price, Store, On Sale, Image, Slip |
+| Transport | From, Destination, Mode (Uber/Taxi/Train/Flight), Price, Barcode, Slip |
+| Lunch | Food Type, Store, Price, Buying For, Barcode, Image, Slip |
+| Garments | Item, Store, Price, Quantity, Barcode, Image, Slip |
+| Furniture | Item, Store, Price, Quantity, Barcode, Image, Slip |
+| Rent | Date, Price, Barcode, Image, Slip, Invoice |
+| Cosmetics | Item, Store, Price, Quantity, Barcode, Image, Slip |
+| Takeouts | Item, Store, Price, Buying For, Barcode, Image, Slip |
+| Dates | Restaurant, Description, Price, Qty, Barcode, Image, Slip |
+| Other | Item, Store, Price, Description, Barcode, Image, Slip |
 
 ---
 
@@ -58,10 +63,12 @@ npm install
 Create a `.env` file in the `Backend/` folder:
 
 ```env
-MONGO_URI=mongodb+srv://<username>:<password>@cluster0.eqcrw1r.mongodb.net/moneytrack?retryWrites=true&w=majority
+MONGO_URI=mongodb+srv://<username>:<password>@cluster0.eqcrw1r.mongodb.net/moneytrack?retryWrites=true&w=majority&tls=true
 JWT_SECRET=your_jwt_secret_here
 PORT=5000
 ```
+
+> ⚠️ If your password contains special characters (e.g. `!`), URL-encode them (`!` → `%21`)
 
 Start the server:
 
@@ -92,17 +99,31 @@ npm run dev
 |--------|----------|-------------|
 | POST | `/api/expenses/:category` | Add expense |
 | GET | `/api/expenses/:category` | Get all expenses in category |
+| PUT | `/api/expenses/:category/:id` | Update an expense |
 | DELETE | `/api/expenses/:category/:id` | Delete an expense |
 
-**Categories:** `grocery`, `transport`, `lunch`, `garment`, `furniture`, `rent`, `cosmetic`, `takeout`, `date`
+**Categories:** `grocery`, `transport`, `lunch`, `garment`, `furniture`, `rent`, `cosmetic`, `takeout`, `date`, `other`
 
 ### Analytics
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/expenses/summary/daily` | Today's total per category |
-| GET | `/api/expenses/summary/weekly` | Last 7 days |
-| GET | `/api/expenses/summary/monthly` | Current month |
-| GET | `/api/expenses/summary/yearly` | Current year |
+| GET | `/api/expenses/summary/daily?date=YYYY-MM-DD` | Specific day total per category |
+| GET | `/api/expenses/summary/weekly?date=YYYY-MM-DD` | 7 days ending on date |
+| GET | `/api/expenses/summary/monthly?date=YYYY-MM-01` | Specific month |
+| GET | `/api/expenses/summary/yearly?date=YYYY-01-01` | Specific year |
+
+---
+
+## Barcode / QR Scanning
+
+Every category has a **Scan** button that opens a scanner modal with two modes:
+
+- **Use Camera** — activates the rear camera and auto-detects barcodes/QR codes in real time
+- **Scan from Image** — pick a photo from your gallery or files (e.g. a product photo or slip)
+
+On a successful scan the add form opens pre-filled with the scanned value in the barcode field and the first relevant text field of that category.
+
+**Supported formats:** EAN-13, EAN-8, UPC-A, UPC-E, Code 128, Code 39, QR Code, Data Matrix and more.
 
 ---
 
@@ -114,6 +135,17 @@ Send as `multipart/form-data` with fields:
 - `invoice` — invoice document (rent)
 
 Uploaded files are stored in `Backend/uploads/`.
+
+---
+
+## Mobile Layout
+
+- No topbar — only a floating hamburger button fixed at top-right
+- Bottom navigation bar with **Home** and **Menu** buttons
+- Sidebar slides in on Menu click, closes on nav item or Home click
+- Sidebar nav scrolls vertically if items overflow the screen
+- Category summary cards scroll horizontally on small screens
+- Tables scroll both horizontally and vertically with sticky headers
 
 ---
 
@@ -150,7 +182,33 @@ Bugdet_App/
 │   ├── API.rest
 │   └── .env
 └── Frontend/
-    └── (React Vite app)
+    └── src/
+        ├── components/
+        │   ├── BarcodeScanner.jsx
+        │   ├── ExpensePage.jsx
+        │   ├── FileField.jsx
+        │   ├── Layout.jsx
+        │   └── Modal.jsx
+        ├── context/
+        │   └── AuthContext.jsx
+        ├── css/
+        │   ├── auth.css
+        │   ├── dashboard.css
+        │   └── layout.css
+        └── pages/
+            ├── Dashboard.jsx
+            ├── Grocery.jsx
+            ├── Transport.jsx
+            ├── Lunch.jsx
+            ├── Garment.jsx
+            ├── Furniture.jsx
+            ├── Rent.jsx
+            ├── Cosmetic.jsx
+            ├── Takeout.jsx
+            ├── DatePage.jsx
+            ├── Other.jsx
+            ├── SignIn.jsx
+            └── SignUp.jsx
 ```
 
 ---
