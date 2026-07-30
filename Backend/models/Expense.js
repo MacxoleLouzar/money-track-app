@@ -22,7 +22,7 @@ const transportSchema = new mongoose.Schema({
 
 const lunchSchema = new mongoose.Schema({
   ...base,
-  foodType: String, store: String, price: Number,
+  foodType: String, store: String, price: Number, PersonBuyingForName: String, 
 });
 
 const garmentSchema = new mongoose.Schema({
@@ -47,12 +47,17 @@ const cosmeticSchema = new mongoose.Schema({
 
 const takeoutSchema = new mongoose.Schema({
   ...base,
-  item: String, store: String, price: Number,
+  item: String, store: String, price: Number, PersonBuyingForName: String,
 });
 
 const dateSchema = new mongoose.Schema({
   ...base,
-  restaurant: String, foodDescription: String, price: Number,
+  restaurant: String, foodDescription: String, price: Number, qauntity: Number,
+});
+
+const otherSchema = new mongoose.Schema({
+  ...base,
+  item: String, price: Number, store: String, description: String,
 });
 
 export const Grocery = mongoose.model('Grocery', grocerySchema);
@@ -64,3 +69,4 @@ export const Rent = mongoose.model('Rent', rentSchema);
 export const Cosmetic = mongoose.model('Cosmetic', cosmeticSchema);
 export const Takeout = mongoose.model('Takeout', takeoutSchema);
 export const DateExpense = mongoose.model('DateExpense', dateSchema);
+export const Other = mongoose.model('Other', otherSchema);

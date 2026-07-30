@@ -1,9 +1,10 @@
 import {
   Grocery, Transport, Lunch, Garment,
-  Furniture, Rent, Cosmetic, Takeout, DateExpense
+  Furniture, Rent, Cosmetic, Takeout, DateExpense,
+  Other
 } from '../models/Expense.js';
 
-const models = { grocery: Grocery, transport: Transport, lunch: Lunch, garment: Garment, furniture: Furniture, rent: Rent, cosmetic: Cosmetic, takeout: Takeout, date: DateExpense };
+const models = { grocery: Grocery, transport: Transport, lunch: Lunch, garment: Garment, furniture: Furniture, rent: Rent, cosmetic: Cosmetic, takeout: Takeout, date: DateExpense, other: Other };
 
 export const addExpense = async (req, res) => {
   try {
@@ -26,6 +27,26 @@ export const getExpenses = async (req, res) => {
     if (!Model) return res.status(400).json({ message: 'Invalid category' });
     const expenses = await Model.find({ user: req.user.id }).sort({ date: -1 });
     res.json(expenses);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+export const updateExpense = async (req, res) => {
+  try {
+    const Model = models[req.params.category];
+    if (!Model) return res.status(400).json({ message: 'Invalid category' });
+    const data = { ...req.body };
+    if (req.files?.image) data.image = req.files.image[0].path;
+    if (req.files?.slip) data.slip = req.files.slip[0].path;
+    if (req.files?.invoice) data.invoice = req.files.invoice[0].path;
+    const updated = await Model.findOneAndUpdate(
+      { _id: req.params.id, user: req.user.id },
+      data,
+      { new: true, runValidators: true }
+    );
+    if (!updated) return res.status(404).json({ message: 'Not found' });
+    res.json(updated);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
