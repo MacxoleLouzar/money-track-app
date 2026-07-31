@@ -14,7 +14,10 @@ dotenv.config();
 const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-app.use(cors());
+app.use(cors({
+  origin: ['https://macxolelouzar.github.io', 'http://localhost:5173', 'http://localhost:5174'],
+  credentials: true,
+}));
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
