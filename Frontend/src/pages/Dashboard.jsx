@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import '../css/dashboard.css';
+import { API_URL } from '../utils/api';
 
 const periods = ['daily', 'weekly', 'monthly', 'yearly'];
 
@@ -35,7 +36,7 @@ export default function Dashboard() {
   useEffect(() => {
     setLoading(true);
     const dateParam = getDateParam();
-    fetch(`/api/expenses/summary/${period}?date=${dateParam}`, {
+    fetch(`${API_URL}/expenses/summary/${period}?date=${dateParam}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.json())

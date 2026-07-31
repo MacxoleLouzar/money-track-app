@@ -6,7 +6,9 @@ import FileField from './FileField';
 import BarcodeScanner from './BarcodeScanner';
 import '../css/dashboard.css';
 
-const API = '/api/expenses';
+import { API_URL } from '../utils/api';
+
+const API = `${API_URL}/expenses`;
 const PAGE_SIZE = 10;
 
 export default function ExpensePage({ category, title, fields, scannable = false }) {

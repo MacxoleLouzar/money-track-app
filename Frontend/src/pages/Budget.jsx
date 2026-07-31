@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Plus, Trash2, ChevronDown, ChevronUp, Pencil, X, ShoppingBag, Search } from 'lucide-react';
 import { CATEGORY_FIELDS } from '../utils/categoryFields';
+import { API_URL } from '../utils/api';
 import '../css/dashboard.css';
 import '../css/budget.css';
 
@@ -39,6 +40,7 @@ const barColor = (pct) => {
 export default function Budget() {
   const { token } = useAuth();
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const BAPI = `${API_URL}/budget`;
 
   const [budgets, setBudgets]     = useState([]);
   const [statuses, setStatuses]   = useState({});
@@ -63,7 +65,7 @@ export default function Budget() {
 
   const fetchBudgets = async () => {
     setLoading(true);
-    const res = await fetch('/api/budget', { headers });
+    const res = await fetch(BAPI, { headers });
     const data = await res.json();
     setBudgets(Array.isArray(data) ? data : []);
     setLoading(false);
@@ -72,7 +74,7 @@ export default function Budget() {
   useEffect(() => { fetchBudgets(); }, []);
 
   const fetchStatus = async (id) => {
-    const res = await fetch(`/api/budget/${id}/status`, { headers });
+    const res = await fetch(`${BAPI}/${id}/status`, { headers });
     const data = await res.json();
     setStatuses(s => ({ ...s, [id]: data }));
   };
@@ -108,10 +110,10 @@ export default function Budget() {
     setBudgetSaving(true); setBudgetError('');
     const body = JSON.stringify({ ...budgetForm, amount: Number(budgetForm.amount) });
     if (editingBudget) {
-      await fetch(`/api/budget/${editingBudget._id}`, { method: 'PUT', headers, body });
+      await fetch(`${BAPI}/${editingBudget._id}`, { method: 'PUT', headers, body });
       setStatuses(s => { const n = { ...s }; delete n[editingBudget._id]; return n; });
     } else {
-      await fetch('/api/budget', { method: 'POST', headers, body });
+      await fetch(BAPI, { method: 'POST', headers, body });
     }
     setBudgetSaving(false);
     setShowBudgetForm(false);
@@ -120,7 +122,7 @@ export default function Budget() {
 
   const handleDeleteBudget = async (id) => {
     if (!confirm('Delete this budget?')) return;
-    await fetch(`/api/budget/${id}`, { method: 'DELETE', headers });
+    await fetch(`${BAPI}/${id}`, { method: 'DELETE', headers });
     setBudgets(b => b.filter(x => x._id !== id));
     if (expanded === id) setExpanded(null);
   };
@@ -139,7 +141,7 @@ export default function Budget() {
   const handleExpSubmit = async e => {
     e.preventDefault();
     setExpSaving(true);
-    await fetch(`/api/expenses/${expCategory}`, {
+    await fetch(`${API_URL}/expenses/${expCategory}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(expForm),

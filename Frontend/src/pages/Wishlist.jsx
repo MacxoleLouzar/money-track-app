@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { Plus, Trash2, ChevronDown, ChevronUp, Pencil, X, CheckCircle2, Circle, Search } from 'lucide-react';
 import '../css/dashboard.css';
 import '../css/wishlist.css';
+import { API_URL } from '../utils/api';
+import { API_URL } from '../utils/api';
 
 const PERIODS = ['daily', 'weekly', 'monthly'];
 const ALL_CATEGORIES = [
@@ -23,6 +25,7 @@ const catLabel = (key) => ALL_CATEGORIES.find(c => c.key === key)?.label || key;
 export default function Wishlist() {
   const { token } = useAuth();
   const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+  const WAPI = `${API_URL}/wishlist`;
 
   const [lists, setLists]       = useState([]);
   const [loading, setLoading]   = useState(true);
@@ -46,7 +49,7 @@ export default function Wishlist() {
 
   const fetchLists = async () => {
     setLoading(true);
-    const res = await fetch('/api/wishlist', { headers });
+    const res = await fetch(WAPI, { headers });
     const data = await res.json();
     setLists(Array.isArray(data) ? data : []);
     setLoading(false);
@@ -65,11 +68,11 @@ export default function Wishlist() {
     if (!listForm.name.trim()) { setListError('Name is required.'); return; }
     setListSaving(true); setListError('');
     if (editingList) {
-      const res = await fetch(`/api/wishlist/${editingList._id}`, { method: 'PUT', headers, body: JSON.stringify(listForm) });
+      const res = await fetch(`${WAPI}/${editingList._id}`, { method: 'PUT', headers, body: JSON.stringify(listForm) });
       const updated = await res.json();
       setLists(ls => ls.map(l => l._id === updated._id ? updated : l));
     } else {
-      await fetch('/api/wishlist', { method: 'POST', headers, body: JSON.stringify(listForm) });
+      await fetch(WAPI, { method: 'POST', headers, body: JSON.stringify(listForm) });
       fetchLists();
     }
     setListSaving(false);
@@ -78,7 +81,7 @@ export default function Wishlist() {
 
   const handleDeleteList = async (id) => {
     if (!confirm('Delete this wishlist?')) return;
-    await fetch(`/api/wishlist/${id}`, { method: 'DELETE', headers });
+    await fetch(`${WAPI}/${id}`, { method: 'DELETE', headers });
     setLists(ls => ls.filter(l => l._id !== id));
     if (expanded === id) setExpanded(null);
   };
@@ -90,7 +93,7 @@ export default function Wishlist() {
     e.preventDefault();
     if (!itemForm.name.trim()) return;
     setItemSaving(true);
-    const res = await fetch(`/api/wishlist/${activeListId}/items`, { method: 'POST', headers, body: JSON.stringify(itemForm) });
+    const res = await fetch(`${WAPI}/${activeListId}/items`, { method: 'POST', headers, body: JSON.stringify(itemForm) });
     const updated = await res.json();
     setLists(ls => ls.map(l => l._id === updated._id ? updated : l));
     setItemSaving(false);
@@ -98,13 +101,13 @@ export default function Wishlist() {
   };
 
   const handleRemoveItem = async (listId, itemId) => {
-    const res = await fetch(`/api/wishlist/${listId}/items/${itemId}`, { method: 'DELETE', headers });
+    const res = await fetch(`${WAPI}/${listId}/items/${itemId}`, { method: 'DELETE', headers });
     const updated = await res.json();
     setLists(ls => ls.map(l => l._id === updated._id ? updated : l));
   };
 
   const handleTick = async (listId, itemId, current) => {
-    const res = await fetch(`/api/wishlist/${listId}/items/${itemId}/tick`, {
+    const res = await fetch(`${WAPI}/${listId}/items/${itemId}/tick`, {
       method: 'PATCH', headers, body: JSON.stringify({ bought: !current }),
     });
     const updated = await res.json();
