@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Image, ChevronLeft, ChevronRight, ScanLine } from 'lucide-react';
+import { Plus, Pencil, Trash2, Image, ChevronLeft, ChevronRight, ScanLine, Search, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import Modal from './Modal';
 import FileField from './FileField';
@@ -20,6 +20,9 @@ export default function ExpensePage({ category, title, fields, scannable = false
   const [saving, setSaving] = useState(false);
   const [page, setPage] = useState(1);
   const [showScanner, setShowScanner] = useState(false);
+  const [search, setSearch] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -33,20 +36,24 @@ export default function ExpensePage({ category, title, fields, scannable = false
 
   useEffect(() => { fetchExpenses(); }, [category]);
 
-  const openAdd = () => { setEditing(null); setForm({}); setFiles({}); setShowModal(true); };
+  const openAdd = () => { setEditing(null); setForm({ date: new Date().toISOString().split('T')[0] }); setFiles({}); setShowModal(true); };
 
   const handleScan = (value) => {
     setShowScanner(false);
     setEditing(null);
     setFiles({});
-    // Fill the first text field + barcode with the scanned value
     const firstTextField = fields.find(f => !f.type || f.type === 'text');
-    const prefill = { barcode: value };
+    const prefill = { barcode: value, date: new Date().toISOString().split('T')[0] };
     if (firstTextField) prefill[firstTextField.name] = value;
     setForm(prefill);
     setShowModal(true);
   };
-  const openEdit = (exp) => { setEditing(exp); setForm({ ...exp }); setFiles({}); setShowModal(true); };
+  const openEdit = (exp) => {
+    setEditing(exp);
+    setForm({ ...exp, date: exp.date ? new Date(exp.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0] });
+    setFiles({});
+    setShowModal(true);
+  };
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
   const handleFile = e => setFiles(f => ({ ...f, [e.target.name]: e.target.files[0] }));
@@ -85,15 +92,26 @@ export default function ExpensePage({ category, title, fields, scannable = false
   const displayFields = fields.filter(f => f.type !== 'file');
   const fileFields = fields.filter(f => f.type === 'file');
 
-  const totalPages = Math.max(1, Math.ceil(expenses.length / PAGE_SIZE));
-  const paginated = expenses.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const filtered = expenses.filter(exp => {
+    const q = search.toLowerCase();
+    const matchSearch = !q || displayFields.some(f => String(exp[f.name] ?? '').toLowerCase().includes(q));
+    const expDate = exp.date ? new Date(exp.date) : null;
+    const matchFrom = !dateFrom || (expDate && expDate >= new Date(dateFrom));
+    const matchTo   = !dateTo   || (expDate && expDate <= new Date(dateTo + 'T23:59:59'));
+    return matchSearch && matchFrom && matchTo;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const clearFilters = () => { setSearch(''); setDateFrom(''); setDateTo(''); setPage(1); };
 
   return (
     <div>
       <div className="page-header">
         <div>
           <h1 className="page-title">{title}</h1>
-          <p className="page-subtitle">{expenses.length} record{expenses.length !== 1 ? 's' : ''}</p>
+          <p className="page-subtitle">{filtered.length} of {expenses.length} record{expenses.length !== 1 ? 's' : ''}</p>
         </div>
         <div className="page-actions">
           {scannable && (
@@ -111,6 +129,21 @@ export default function ExpensePage({ category, title, fields, scannable = false
       <button className="fab" onClick={openAdd} title={`Add ${title}`}>
         <Plus size={22} />
       </button>
+
+      <div className="filter-bar">
+        <div className="filter-search">
+          <Search size={15} className="filter-search-icon" />
+          <input className="filter-input" placeholder="Search..." value={search}
+            onChange={e => { setSearch(e.target.value); setPage(1); }} />
+        </div>
+        <input className="filter-input filter-date" type="date" value={dateFrom} title="From date"
+          onChange={e => { setDateFrom(e.target.value); setPage(1); }} />
+        <input className="filter-input filter-date" type="date" value={dateTo} title="To date"
+          onChange={e => { setDateTo(e.target.value); setPage(1); }} />
+        {(search || dateFrom || dateTo) && (
+          <button className="btn btn-outline btn-sm" onClick={clearFilters}><X size={14} /> Clear</button>
+        )}
+      </div>
 
       <div className="card">
         {loading ? (
@@ -218,6 +251,11 @@ export default function ExpensePage({ category, title, fields, scannable = false
                   {files[f.name] && <div className="file-name">{files[f.name].name}</div>}
                 </div>
               ))}
+            </div>
+            {/* Date field — always editable */}
+            <div className="form-group" style={{ marginTop: '0.5rem' }}>
+              <label className="form-label">Date</label>
+              <input className="form-input" type="date" name="date" value={form.date || ''} onChange={handleChange} />
             </div>
             <div className="form-actions">
               <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)}>Cancel</button>

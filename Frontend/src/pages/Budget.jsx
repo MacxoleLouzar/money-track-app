@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Plus, Trash2, ChevronDown, ChevronUp, Pencil, X, ShoppingBag } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, Pencil, X, ShoppingBag, Search } from 'lucide-react';
 import { CATEGORY_FIELDS } from '../utils/categoryFields';
 import '../css/dashboard.css';
 import '../css/budget.css';
@@ -44,6 +44,8 @@ export default function Budget() {
   const [statuses, setStatuses]   = useState({});
   const [expanded, setExpanded]   = useState(null);
   const [loading, setLoading]     = useState(true);
+  const [budgetSearch, setBudgetSearch] = useState('');
+  const [budgetPeriodFilter, setBudgetPeriodFilter] = useState('');
 
   // Budget create/edit modal
   const [showBudgetForm, setShowBudgetForm] = useState(false);
@@ -154,6 +156,12 @@ export default function Budget() {
     : [];
   const expFields = (CATEGORY_FIELDS[expCategory] || []).filter(f => f.type !== 'file');
 
+  const filteredBudgets = budgets.filter(b => {
+    const matchName = !budgetSearch || b.name.toLowerCase().includes(budgetSearch.toLowerCase());
+    const matchPeriod = !budgetPeriodFilter || b.period === budgetPeriodFilter;
+    return matchName && matchPeriod;
+  });
+
   return (
     <div>
       <div className="page-header">
@@ -166,11 +174,29 @@ export default function Budget() {
         </button>
       </div>
 
-      {loading ? <div className="spinner" /> : budgets.length === 0 ? (
-        <div className="empty-state"><p>No budgets yet. Create one to start tracking.</p></div>
+      <div className="filter-bar">
+        <div className="filter-search">
+          <Search size={15} className="filter-search-icon" />
+          <input className="filter-input" placeholder="Search budgets..." value={budgetSearch}
+            onChange={e => setBudgetSearch(e.target.value)} />
+        </div>
+        <select className="filter-input" style={{ width: 'auto' }} value={budgetPeriodFilter}
+          onChange={e => setBudgetPeriodFilter(e.target.value)}>
+          <option value="">All periods</option>
+          {PERIODS.map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+        </select>
+        {(budgetSearch || budgetPeriodFilter) && (
+          <button className="btn btn-outline btn-sm" onClick={() => { setBudgetSearch(''); setBudgetPeriodFilter(''); }}>
+            <X size={14} /> Clear
+          </button>
+        )}
+      </div>
+
+      {loading ? <div className="spinner" /> : filteredBudgets.length === 0 ? (
+        <div className="empty-state"><p>{budgets.length === 0 ? 'No budgets yet. Create one to start tracking.' : 'No budgets match your filter.'}</p></div>
       ) : (
         <div className="budget-list">
-          {budgets.map(b => {
+          {filteredBudgets.map(b => {
             const st = statuses[b._id];
             const isOpen = expanded === b._id;
             const cfg = st ? alertConfig(st.alert) : null;

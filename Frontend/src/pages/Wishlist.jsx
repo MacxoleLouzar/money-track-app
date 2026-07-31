@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Plus, Trash2, ChevronDown, ChevronUp, Pencil, X, CheckCircle2, Circle } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, Pencil, X, CheckCircle2, Circle, Search } from 'lucide-react';
 import '../css/dashboard.css';
 import '../css/wishlist.css';
 
@@ -27,6 +27,9 @@ export default function Wishlist() {
   const [lists, setLists]       = useState([]);
   const [loading, setLoading]   = useState(true);
   const [expanded, setExpanded] = useState(null);
+  const [wlSearch, setWlSearch] = useState('');
+  const [wlPeriod, setWlPeriod] = useState('');
+  const [wlStatus, setWlStatus] = useState('');
 
   // Wishlist create/edit
   const [showListForm, setShowListForm] = useState(false);
@@ -108,6 +111,18 @@ export default function Wishlist() {
     setLists(ls => ls.map(l => l._id === updated._id ? updated : l));
   };
 
+  const filteredLists = lists.filter(l => {
+    const matchName   = !wlSearch || l.name.toLowerCase().includes(wlSearch.toLowerCase());
+    const matchPeriod = !wlPeriod || l.period === wlPeriod;
+    const total = l.items.length;
+    const bought = l.items.filter(i => i.bought).length;
+    const pct = total > 0 ? Math.round((bought / total) * 100) : 0;
+    const matchStatus = !wlStatus
+      || (wlStatus === 'complete' && pct === 100)
+      || (wlStatus === 'pending'  && pct < 100);
+    return matchName && matchPeriod && matchStatus;
+  });
+
   return (
     <div>
       <div className="page-header">
@@ -120,11 +135,35 @@ export default function Wishlist() {
         </button>
       </div>
 
-      {loading ? <div className="spinner" /> : lists.length === 0 ? (
-        <div className="empty-state"><p>No wishlists yet. Create one to start planning.</p></div>
+      <div className="filter-bar">
+        <div className="filter-search">
+          <Search size={15} className="filter-search-icon" />
+          <input className="filter-input" placeholder="Search lists..." value={wlSearch}
+            onChange={e => setWlSearch(e.target.value)} />
+        </div>
+        <select className="filter-input" style={{ width: 'auto' }} value={wlPeriod}
+          onChange={e => setWlPeriod(e.target.value)}>
+          <option value="">All periods</option>
+          {PERIODS.map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
+        </select>
+        <select className="filter-input" style={{ width: 'auto' }} value={wlStatus}
+          onChange={e => setWlStatus(e.target.value)}>
+          <option value="">All</option>
+          <option value="pending">Pending</option>
+          <option value="complete">Complete</option>
+        </select>
+        {(wlSearch || wlPeriod || wlStatus) && (
+          <button className="btn btn-outline btn-sm" onClick={() => { setWlSearch(''); setWlPeriod(''); setWlStatus(''); }}>
+            <X size={14} /> Clear
+          </button>
+        )}
+      </div>
+
+      {loading ? <div className="spinner" /> : filteredLists.length === 0 ? (
+        <div className="empty-state"><p>{lists.length === 0 ? 'No wishlists yet. Create one to start planning.' : 'No lists match your filter.'}</p></div>
       ) : (
         <div className="wl-list">
-          {lists.map(l => {
+          {filteredLists.map(l => {
             const isOpen = expanded === l._id;
             const bought = l.items.filter(i => i.bought).length;
             const total  = l.items.length;
