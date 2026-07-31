@@ -7,6 +7,8 @@ import { fileURLToPath } from 'url';
 
 import authRoutes from './routes/auth.js';
 import expenseRoutes from './routes/expenses.js';
+import budgetRoutes from './routes/budget.js';
+import wishlistRoutes from './routes/wishlist.js';
 
 dotenv.config();
 const app = express();
@@ -18,6 +20,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
+app.use('/api/budget', budgetRoutes);
+app.use('/api/wishlist', wishlistRoutes);
 
 mongoose.connect(process.env.MONGO_URI, { serverSelectionTimeoutMS: 5000 })
   .then(() => {

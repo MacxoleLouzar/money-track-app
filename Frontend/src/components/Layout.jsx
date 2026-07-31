@@ -4,13 +4,15 @@ import { useAuth } from '../context/AuthContext';
 import {
   ShoppingCart, Bus, UtensilsCrossed, Shirt, Sofa,
   Home, Sparkles, Package, Heart, MoreHorizontal,
-  BarChart2, LogOut, Menu, House
+  BarChart2, LogOut, Menu, House, Wallet, ListChecks
 } from 'lucide-react';
 import '../css/layout.css';
 
 const navItems = [
   { to: '/home', icon: House, label: 'Home' },
   { to: '/dashboard', icon: BarChart2, label: 'Analytics' },
+  { to: '/budget', icon: Wallet, label: 'My Budget' },
+  { to: '/wishlist', icon: ListChecks, label: 'Wishlist' },
   { to: '/grocery', icon: ShoppingCart, label: 'Groceries' },
   { to: '/transport', icon: Bus, label: 'Transport' },
   { to: '/lunch', icon: UtensilsCrossed, label: 'Lunch' },

@@ -3,6 +3,7 @@ import {
   Furniture, Rent, Cosmetic, Takeout, DateExpense,
   Other
 } from '../models/Expense.js';
+import { autoTickByExpense } from './wishlistController.js';
 
 const models = { grocery: Grocery, transport: Transport, lunch: Lunch, garment: Garment, furniture: Furniture, rent: Rent, cosmetic: Cosmetic, takeout: Takeout, date: DateExpense, other: Other };
 
@@ -15,6 +16,9 @@ export const addExpense = async (req, res) => {
     if (req.files?.slip) data.slip = req.files.slip[0].path;
     if (req.files?.invoice) data.invoice = req.files.invoice[0].path;
     const expense = await Model.create(data);
+    // Auto-tick any wishlist items matching this category + item name
+    const itemName = data.item || data.foodType || data.restaurant || data.from || null;
+    autoTickByExpense(req.user.id, req.params.category, itemName).catch(() => {});
     res.status(201).json(expense);
   } catch (err) {
     res.status(500).json({ message: err.message });

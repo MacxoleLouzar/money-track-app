@@ -243,6 +243,35 @@ tr:hover td { background: #f0f9ff; }
   .page-title { font-size: 1.25rem; }
   .modal { padding: 1.25rem; }
 
+  /* Hide button text labels on small screens — icons only */
+  .btn-label { display: none; }
+
+  /* Keep header action buttons icon-only and compact */
+  .page-actions { display: flex; gap: 0.4rem; }
+  .page-actions .btn { padding: 0.5rem 0.65rem; }
+
+  /* Floating Add button fixed bottom-right, above bottom nav bar */
+  .fab {
+    display: flex;
+    position: fixed;
+    bottom: 4.5rem;
+    right: 1rem;
+    z-index: 150;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #111827;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+    transition: background 0.15s, transform 0.15s;
+  }
+
+  .fab:active { transform: scale(0.93); }
+
   /* Horizontal scroll row for category cards on mobile */
   .summary-grid {
     display: flex;
@@ -259,4 +288,10 @@ tr:hover td { background: #f0f9ff; }
     flex: 0 0 150px;
     min-width: 150px;
   }
+}
+
+/* FAB hidden on desktop */
+@media (min-width: 641px) {
+  .fab { display: none; }
+  .btn-label { display: inline; }
 }

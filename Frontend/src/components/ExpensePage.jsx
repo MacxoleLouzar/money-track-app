@@ -95,17 +95,22 @@ export default function ExpensePage({ category, title, fields, scannable = false
           <h1 className="page-title">{title}</h1>
           <p className="page-subtitle">{expenses.length} record{expenses.length !== 1 ? 's' : ''}</p>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div className="page-actions">
           {scannable && (
             <button className="btn btn-outline" onClick={() => setShowScanner(true)}>
-              <ScanLine size={16} /> Scan
+              <ScanLine size={16} /> <span className="btn-label">Scan</span>
             </button>
           )}
           <button className="btn btn-primary" onClick={openAdd}>
-            <Plus size={16} /> Add {title}
+            <Plus size={16} /> <span className="btn-label">Add {title}</span>
           </button>
         </div>
       </div>
+
+      {/* Mobile floating Add button */}
+      <button className="fab" onClick={openAdd} title={`Add ${title}`}>
+        <Plus size={22} />
+      </button>
 
       <div className="card">
         {loading ? (

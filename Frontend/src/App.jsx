@@ -13,6 +13,8 @@ import Rent from './pages/Rent';
 import Cosmetic from './pages/Cosmetic';
 import Takeout from './pages/Takeout';
 import DatePage from './pages/DatePage';
+import Budget from './pages/Budget';
+import Wishlist from './pages/Wishlist';
 import Other from './pages/Other';
 
 const PrivateRoute = ({ children }) => {
@@ -37,6 +39,8 @@ function AppRoutes() {
       <Route path="/cosmetic" element={<PrivateRoute><Cosmetic /></PrivateRoute>} />
       <Route path="/takeout" element={<PrivateRoute><Takeout /></PrivateRoute>} />
       <Route path="/date" element={<PrivateRoute><DatePage /></PrivateRoute>} />
+      <Route path="/budget" element={<PrivateRoute><Budget /></PrivateRoute>} />
+      <Route path="/wishlist" element={<PrivateRoute><Wishlist /></PrivateRoute>} />
       <Route path="/other" element={<PrivateRoute><Other /></PrivateRoute>} />
       <Route path="*" element={<Navigate to={token ? "/home" : "/signin"} />} />
     </Routes>
