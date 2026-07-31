@@ -4,7 +4,6 @@ import { Plus, Trash2, ChevronDown, ChevronUp, Pencil, X, CheckCircle2, Circle, 
 import '../css/dashboard.css';
 import '../css/wishlist.css';
 import { API_URL } from '../utils/api';
-import { API_URL } from '../utils/api';
 
 const PERIODS = ['daily', 'weekly', 'monthly'];
 const ALL_CATEGORIES = [
