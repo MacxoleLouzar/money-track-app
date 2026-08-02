@@ -9,7 +9,10 @@
       // Handle GitHub Pages redirect from 404.html
       (function() {
         const p = new URLSearchParams(window.location.search).get('p');
-        if (p) window.history.replaceState(null, '', p + window.location.hash);
+        if (p) {
+          const stripped = p.replace('/money-track-app', '') || '/';
+          window.history.replaceState(null, '', '/money-track-app' + stripped + window.location.hash);
+        }
       })();
     </script>
   </head>
