@@ -21,6 +21,9 @@ app.use(cors({
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+app.get('/', (req, res) => res.json({ status: 'MoneyTrack API running' }));
+
+
 app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expenseRoutes);
 app.use('/api/budget', budgetRoutes);
