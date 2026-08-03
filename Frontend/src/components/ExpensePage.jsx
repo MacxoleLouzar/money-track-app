@@ -40,13 +40,37 @@ export default function ExpensePage({ category, title, fields, scannable = false
 
   const openAdd = () => { setEditing(null); setForm({ date: new Date().toISOString().split('T')[0] }); setFiles({}); setShowModal(true); };
 
-  const handleScan = (value) => {
+  const handleScan = async (value) => {
     setShowScanner(false);
     setEditing(null);
     setFiles({});
-    const firstTextField = fields.find(f => !f.type || f.type === 'text');
-    const prefill = { barcode: value, date: new Date().toISOString().split('T')[0] };
-    if (firstTextField) prefill[firstTextField.name] = value;
+    const today = new Date().toISOString().split('T')[0];
+    const prefill = { barcode: value, date: today };
+
+    // Look up product name from Open Food Facts
+    try {
+      const res = await fetch(`https://world.openfoodfacts.org/api/v0/product/${value}.json`);
+      const data = await res.json();
+      if (data.status === 1 && data.product) {
+        const p = data.product;
+        const name = p.product_name || p.product_name_en || '';
+        const brand = p.brands || '';
+        const store = p.stores || '';
+        const productName = [brand, name].filter(Boolean).join(' - ') || name;
+
+        const firstTextField = fields.find(f => !f.type || f.type === 'text');
+        if (firstTextField) prefill[firstTextField.name] = productName;
+        if (fields.find(f => f.name === 'store') && store) prefill.store = store.split(',')[0].trim();
+      } else {
+        // Not found — just put barcode in first text field
+        const firstTextField = fields.find(f => !f.type || f.type === 'text');
+        if (firstTextField) prefill[firstTextField.name] = value;
+      }
+    } catch {
+      const firstTextField = fields.find(f => !f.type || f.type === 'text');
+      if (firstTextField) prefill[firstTextField.name] = value;
+    }
+
     setForm(prefill);
     setShowModal(true);
   };
