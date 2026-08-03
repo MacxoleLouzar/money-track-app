@@ -228,6 +228,184 @@ tr:hover td { background: #f0f9ff; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── Compare feature ── */
+.cmp-pickers {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  background: #f8fafc;
+  border-radius: 0.75rem;
+  padding: 1rem;
+}
+
+.cmp-vs-divider {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #9ca3af;
+  padding: 0 0.25rem;
+  align-self: flex-end;
+  padding-bottom: 0.65rem;
+}
+
+.cmp-banner {
+  display: flex;
+  align-items: stretch;
+  background: #111827;
+  color: #fff;
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+  gap: 0.75rem;
+}
+
+.cmp-banner-side { flex: 1; }
+.cmp-banner-side-b { text-align: right; }
+.cmp-banner-label { font-size: 0.75rem; color: #9ca3af; margin-bottom: 0.25rem; }
+.cmp-banner-value { font-size: 1.4rem; font-weight: 700; color: #a8d8ea; }
+.cmp-banner-vs {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  padding: 0 0.25rem;
+}
+
+.cmp-result {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.1rem;
+  border-radius: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.cmp-result.saved { background: #dcfce7; }
+.cmp-result.over  { background: #fee2e2; }
+.cmp-result.same  { background: #f3f4f6; }
+.cmp-result-icon  { font-size: 1.4rem; flex-shrink: 0; margin-top: 0.1rem; }
+.cmp-result-title { font-size: 1rem; font-weight: 700; }
+.cmp-result.saved .cmp-result-title { color: #15803d; }
+.cmp-result.over  .cmp-result-title { color: #dc2626; }
+.cmp-result.same  .cmp-result-title { color: #374151; }
+.cmp-result-sub   { font-size: 0.82rem; color: #6b7280; margin-top: 0.2rem; }
+
+.cmp-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.cmp-card {
+  background: #fff;
+  border-radius: 0.75rem;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.07);
+  border-left: 4px solid #e5e7eb;
+}
+
+.cmp-card-saved { border-left-color: #16a34a; }
+.cmp-card-over  { border-left-color: #dc2626; }
+.cmp-card-same  { border-left-color: #9ca3af; }
+
+.cmp-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.cmp-card-cat {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #111827;
+  text-transform: capitalize;
+}
+
+.cmp-card-amounts {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.cmp-card-amt { flex: 1; }
+.cmp-card-amt-label { font-size: 0.7rem; color: #9ca3af; margin-bottom: 0.15rem; }
+.cmp-card-amt-value { font-size: 1rem; font-weight: 700; color: #111827; }
+
+.cmp-card-divider {
+  font-size: 0.9rem;
+  color: #d1d5db;
+  flex-shrink: 0;
+}
+
+.cmp-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.cmp-diff, .cmp-pct {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.cmp-green { color: #16a34a; }
+.cmp-red   { color: #dc2626; }
+
+.cmp-bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.cmp-bar-track {
+  height: 6px;
+  background: #f3f4f6;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.cmp-bar-a {
+  height: 100%;
+  background: #a8d8ea;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.cmp-bar-b {
+  height: 100%;
+  background: #d1d5db;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.cmp-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cmp-badge-saved { background: #dcfce7; color: #15803d; }
+.cmp-badge-over  { background: #fee2e2; color: #dc2626; }
+.cmp-badge-same  { background: #f3f4f6; color: #6b7280; }
+
+@media (max-width: 640px) {
+  .cmp-banner { flex-direction: column; gap: 0.5rem; padding: 1rem; }
+  .cmp-banner-side-b { text-align: left; }
+  .cmp-banner-value { font-size: 1.2rem; }
+  .cmp-pickers { flex-direction: column; gap: 0.5rem; }
+  .cmp-vs-divider { align-self: center; padding-bottom: 0; }
+  .cmp-card-amounts { flex-wrap: wrap; }
+}
+
 .period-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
 
 .period-tab {
