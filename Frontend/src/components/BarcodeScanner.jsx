@@ -8,6 +8,7 @@ export default function BarcodeScanner({ onScan, onClose }) {
   const [scanning, setScanning] = useState(false);
   const scannerRef = useRef(null);
   const fileInputRef = useRef(null);
+  const scannedRef = useRef(false);
   const SCANNER_ID = 'qr-scanner-region';
 
   // Start camera scan
@@ -23,21 +24,24 @@ export default function BarcodeScanner({ onScan, onClose }) {
     const scanner = new Html5Qrcode(SCANNER_ID);
     scannerRef.current = scanner;
 
+    scannedRef.current = false;
+
     scanner.start(
       { facingMode: 'environment' },
       { fps: 10, qrbox: { width: 250, height: 150 } },
       (decodedText) => {
-        scanner.stop().catch(() => {});
-        onScan(decodedText);
+        if (scannedRef.current) return;
+        scannedRef.current = true;
+        scanner.stop().catch(() => {}).finally(() => onScan(decodedText));
       },
       () => {}
-    ).catch(err => {
+    ).catch(() => {
       setError('Camera access denied or not available.');
       setScanning(false);
     });
 
     return () => {
-      scanner.stop().catch(() => {});
+      if (!scannedRef.current) scanner.stop().catch(() => {});
     };
   }, [mode, scanning]);
 
@@ -49,10 +53,10 @@ export default function BarcodeScanner({ onScan, onClose }) {
     const scanner = new Html5Qrcode('qr-file-scanner');
     try {
       const result = await scanner.scanFile(file, true);
+      await scanner.clear().catch(() => {});
       onScan(result);
     } catch {
       setError('No barcode or QR code found in the image. Try a clearer photo.');
-    } finally {
       scanner.clear().catch(() => {});
     }
   };
