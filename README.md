@@ -2,6 +2,9 @@
 
 A full-stack personal expense tracker to monitor daily spending across multiple categories.
 
+🌐 **Live App:** [https://macxolelouzar.github.io/money-track-app/](https://macxolelouzar.github.io/money-track-app/)
+🔧 **API:** [https://money-track-app-gxez.onrender.com](https://money-track-app-gxez.onrender.com)
+
 ---
 
 ## Tech Stack
@@ -14,6 +17,7 @@ A full-stack personal expense tracker to monitor daily spending across multiple 
 | File Uploads | Multer |
 | Frontend | React + Vite |
 | Scanning | html5-qrcode |
+| Deployment | GitHub Pages (frontend) + Render (backend) |
 
 ---
 
@@ -26,6 +30,8 @@ A full-stack personal expense tracker to monitor daily spending across multiple 
 - 📱 Mobile-first layout: floating hamburger, bottom nav bar (Home + Menu), scrollable sidebar
 - 📄 Pagination (10 records per page) with horizontal + vertical table scroll
 - 🔍 Barcode & QR code scanning in all categories — via camera or image upload
+- 💰 Named budgets with per-period tracking, progress bar, 50/75/100/overdraft alerts, category breakdown
+- 🛒 Wishlists with item tick/untick, auto-tick when matching expense is added, progress bar
 - 🗂️ REST API tested via `API.rest`
 
 ---
@@ -34,8 +40,8 @@ A full-stack personal expense tracker to monitor daily spending across multiple 
 
 | Category | Fields |
 |----------|--------|
-| Groceries | Item, Barcode, Quantity, Size (KG/Grams/Liters/ML/Units/Pieces/Pack), Size Amount, Price, Store, On Sale, Image, Slip |
-| Transport | From, Destination, Mode (Uber/Taxi/Train/Flight), Price, Barcode, Slip |
+| Groceries | Item, Barcode, Quantity, Size Amount, Size Unit, Price, Store, On Sale, Image, Slip |
+| Transport | From, Destination, Mode (Uber/Taxi/Train/Flight), Price, Barcode, Image, Slip |
 | Lunch | Food Type, Store, Price, Buying For, Barcode, Image, Slip |
 | Garments | Item, Store, Price, Quantity, Barcode, Image, Slip |
 | Furniture | Item, Store, Price, Quantity, Barcode, Image, Slip |
@@ -86,6 +92,31 @@ npm run dev
 
 ---
 
+## Deployment
+
+### Frontend — GitHub Pages
+
+```bash
+cd Frontend
+npm run deploy
+```
+
+Deploys to the `gh-pages` branch. GitHub Pages source must be set to `gh-pages` branch / root.
+
+SPA routing is handled by `public/404.html` which redirects all paths to `index.html?p=...`, and `index.html` restores the path before React Router loads.
+
+### Backend — Render
+
+- Service type: **Web Service**
+- Root directory: `Backend`
+- Build command: `npm install`
+- Start command: `node server.js`
+- Environment variables: `MONGO_URI`, `JWT_SECRET`, `PORT`
+
+> ⚠️ MongoDB Atlas must have `0.0.0.0/0` whitelisted in Network Access for Render to connect.
+
+---
+
 ## API Endpoints
 
 ### Auth
@@ -112,6 +143,26 @@ npm run dev
 | GET | `/api/expenses/summary/monthly?date=YYYY-MM-01` | Specific month |
 | GET | `/api/expenses/summary/yearly?date=YYYY-01-01` | Specific year |
 
+### Budgets (require `Authorization: Bearer <token>`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/budget` | Create a budget |
+| GET | `/api/budget` | Get all budgets |
+| GET | `/api/budget/:id/status` | Get budget status (spent/remaining/alert) |
+| PUT | `/api/budget/:id` | Update a budget |
+| DELETE | `/api/budget/:id` | Delete a budget |
+
+### Wishlists (require `Authorization: Bearer <token>`)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/wishlist` | Create a wishlist |
+| GET | `/api/wishlist` | Get all wishlists |
+| PUT | `/api/wishlist/:id` | Update a wishlist |
+| DELETE | `/api/wishlist/:id` | Delete a wishlist |
+| POST | `/api/wishlist/:id/items` | Add item to wishlist |
+| DELETE | `/api/wishlist/:id/items/:itemId` | Remove item |
+| PATCH | `/api/wishlist/:id/items/:itemId/tick` | Tick/untick item |
+
 ---
 
 ## Barcode / QR Scanning
@@ -132,7 +183,7 @@ On a successful scan the add form opens pre-filled with the scanned value in the
 Send as `multipart/form-data` with fields:
 - `image` — product/receipt image
 - `slip` — purchase slip (pdf/docx/image)
-- `invoice` — invoice document (rent)
+- `invoice` — invoice document (rent only)
 
 Uploaded files are stored in `Backend/uploads/`.
 
@@ -140,12 +191,14 @@ Uploaded files are stored in `Backend/uploads/`.
 
 ## Mobile Layout
 
-- No topbar — only a floating hamburger button fixed at top-right
+- No topbar — floating hamburger button fixed at top-right
 - Bottom navigation bar with **Home** and **Menu** buttons
 - Sidebar slides in on Menu click, closes on nav item or Home click
 - Sidebar nav scrolls vertically if items overflow the screen
 - Category summary cards scroll horizontally on small screens
 - Tables scroll both horizontally and vertically with sticky headers
+- FAB button (bottom-right) for quick add on all category pages
+- Header buttons show icon-only on mobile
 
 ---
 
@@ -167,16 +220,22 @@ Bugdet_App/
 ├── Backend/
 │   ├── controllers/
 │   │   ├── authController.js
-│   │   └── expenseController.js
+│   │   ├── expenseController.js
+│   │   ├── budgetController.js
+│   │   └── wishlistController.js
 │   ├── middleware/
 │   │   ├── auth.js
 │   │   └── upload.js
 │   ├── models/
 │   │   ├── User.js
-│   │   └── Expense.js
+│   │   ├── Expense.js
+│   │   ├── Budget.js
+│   │   └── Wishlist.js
 │   ├── routes/
 │   │   ├── auth.js
-│   │   └── expenses.js
+│   │   ├── expenses.js
+│   │   ├── budget.js
+│   │   └── wishlist.js
 │   ├── uploads/
 │   ├── server.js
 │   ├── API.rest
@@ -193,8 +252,13 @@ Bugdet_App/
         │   └── AuthContext.jsx
         ├── css/
         │   ├── auth.css
+        │   ├── budget.css
         │   ├── dashboard.css
-        │   └── layout.css
+        │   ├── layout.css
+        │   └── wishlist.css
+        ├── utils/
+        │   ├── api.js
+        │   └── categoryFields.js
         └── pages/
             ├── Dashboard.jsx
             ├── Grocery.jsx
@@ -207,6 +271,8 @@ Bugdet_App/
             ├── Takeout.jsx
             ├── DatePage.jsx
             ├── Other.jsx
+            ├── Budget.jsx
+            ├── Wishlist.jsx
             ├── SignIn.jsx
             └── SignUp.jsx
 ```
@@ -219,3 +285,4 @@ Bugdet_App/
 - `.gitignore` excludes `node_modules/`, `.env`, and `uploads/`
 - Passwords are hashed with bcryptjs (salt rounds: 10)
 - JWT tokens expire in 7 days
+- CORS locked to GitHub Pages origin and localhost
