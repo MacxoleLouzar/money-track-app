@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   ShoppingCart, Bus, UtensilsCrossed, Shirt, Sofa,
   Home, Sparkles, Package, Heart, MoreHorizontal,
-  BarChart2, LogOut, Menu, House, Wallet, ListChecks
+  BarChart2, LogOut, Menu, House, Wallet, ListChecks, UserCircle
 } from 'lucide-react';
 import '../css/layout.css';
 
@@ -23,6 +23,7 @@ const navItems = [
   { to: '/takeout', icon: Package, label: 'Takeouts' },
   { to: '/date', icon: Heart, label: 'Dates' },
   { to: '/other', icon: MoreHorizontal, label: 'Other' },
+  { to: '/profile', icon: UserCircle, label: 'Profile' },
 ];
 
 export default function Layout({ children }) {
@@ -52,9 +53,13 @@ export default function Layout({ children }) {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <div style={{ fontSize: '0.8rem', color: '#9ca3af', paddingLeft: '0.75rem', marginBottom: '0.5rem' }}>
-            {user?.name}
-          </div>
+          <NavLink to="/profile" className="sidebar-profile-btn" onClick={() => setOpen(false)}>
+            <div className="sidebar-avatar">{user?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?'}</div>
+            <div className="sidebar-profile-info">
+              <div className="sidebar-profile-name">{user?.name}</div>
+              <div className="sidebar-profile-sub">View Profile</div>
+            </div>
+          </NavLink>
           <button className="logout-btn" onClick={handleLogout}>
             <LogOut size={18} /> Sign Out
           </button>
@@ -68,6 +73,10 @@ export default function Layout({ children }) {
         <NavLink to="/home" className={({ isActive }) => `bottom-bar-btn ${isActive ? 'active' : ''}`} onClick={() => setOpen(false)}>
           <House size={20} />
           <span>Home</span>
+        </NavLink>
+        <NavLink to="/profile" className={({ isActive }) => `bottom-bar-btn ${isActive ? 'active' : ''}`} onClick={() => setOpen(false)}>
+          <div className="bottom-bar-avatar">{user?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?'}</div>
+          <span>Profile</span>
         </NavLink>
         <button className="bottom-bar-btn" onClick={() => setOpen(true)}>
           <Menu size={20} />

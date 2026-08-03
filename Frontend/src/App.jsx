@@ -17,6 +17,8 @@ import Budget from './pages/Budget';
 import Wishlist from './pages/Wishlist';
 import Other from './pages/Other';
 
+import Profile from './pages/Profile';
+
 const PrivateRoute = ({ children }) => {
   const { token } = useAuth();
   return token ? <Layout>{children}</Layout> : <Navigate to="/signin" />;
@@ -42,6 +44,7 @@ function AppRoutes() {
       <Route path="/budget" element={<PrivateRoute><Budget /></PrivateRoute>} />
       <Route path="/wishlist" element={<PrivateRoute><Wishlist /></PrivateRoute>} />
       <Route path="/other" element={<PrivateRoute><Other /></PrivateRoute>} />
+      <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
       <Route path="*" element={<Navigate to={token ? "/home" : "/signin"} />} />
     </Routes>
   );

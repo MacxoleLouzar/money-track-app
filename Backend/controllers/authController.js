@@ -4,14 +4,7 @@ import User from '../models/User.js';
 
 /**
  * Registers a new user.
- * Hashes the password with bcrypt, creates the user in MongoDB,
- * and returns a signed JWT token valid for 7 days.
  * @route POST /api/auth/signup
- * @param {string} req.body.name - Full name of the user
- * @param {string} req.body.email - Email address (must be unique)
- * @param {string} req.body.password - Plain text password (min recommended: 6 chars)
- * @returns {201} { token, user: { id, name, email } }
- * @returns {400} If email already exists
  */
 export const signup = async (req, res) => {
   try {
@@ -28,13 +21,7 @@ export const signup = async (req, res) => {
 
 /**
  * Authenticates an existing user.
- * Compares the provided password against the stored bcrypt hash.
- * Returns a signed JWT token valid for 7 days on success.
  * @route POST /api/auth/signin
- * @param {string} req.body.email - Registered email address
- * @param {string} req.body.password - Plain text password
- * @returns {200} { token, user: { id, name, email } }
- * @returns {400} If credentials are invalid
  */
 export const signin = async (req, res) => {
   try {
@@ -44,6 +31,46 @@ export const signin = async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user._id, name: user.name, email: user.email } });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/**
+ * Returns the authenticated user's profile.
+ * @route GET /api/auth/profile
+ */
+export const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/**
+ * Updates the authenticated user's name and/or password.
+ * @route PUT /api/auth/profile
+ */
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, currentPassword, newPassword } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    if (name) user.name = name;
+
+    if (newPassword) {
+      if (!currentPassword) return res.status(400).json({ message: 'Current password required' });
+      const valid = await bcrypt.compare(currentPassword, user.password);
+      if (!valid) return res.status(400).json({ message: 'Current password is incorrect' });
+      user.password = await bcrypt.hash(newPassword, 10);
+    }
+
+    await user.save();
+    res.json({ id: user._id, name: user.name, email: user.email });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

@@ -79,6 +79,50 @@
 
 .logout-btn:hover { background: #1f2937; }
 
+.sidebar-profile-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+  text-decoration: none;
+  margin-bottom: 0.5rem;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+
+.sidebar-profile-btn:hover { background: #1f2937; }
+
+.sidebar-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #a8d8ea;
+  color: #111827;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sidebar-profile-name { font-size: 0.875rem; font-weight: 600; color: #fff; }
+.sidebar-profile-sub  { font-size: 0.72rem; color: #6b7280; margin-top: 0.1rem; }
+
+.bottom-bar-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #a8d8ea;
+  color: #111827;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .main-content {
   margin-left: 240px;
   flex: 1;
