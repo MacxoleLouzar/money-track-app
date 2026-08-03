@@ -5,8 +5,24 @@ import {
 } from '../models/Expense.js';
 import { autoTickByExpense } from './wishlistController.js';
 
-const models = { grocery: Grocery, transport: Transport, lunch: Lunch, garment: Garment, furniture: Furniture, rent: Rent, cosmetic: Cosmetic, takeout: Takeout, date: DateExpense, other: Other };
+/** Maps category route param strings to their Mongoose models */
+const models = {
+  grocery: Grocery, transport: Transport, lunch: Lunch, garment: Garment,
+  furniture: Furniture, rent: Rent, cosmetic: Cosmetic, takeout: Takeout,
+  date: DateExpense, other: Other,
+};
 
+/**
+ * Creates a new expense in the specified category.
+ * Handles optional file uploads (image, slip, invoice) via multer.
+ * After saving, triggers autoTickByExpense to tick matching wishlist items.
+ * @route POST /api/expenses/:category
+ * @param {string} req.params.category - Expense category key (e.g. 'grocery')
+ * @param {object} req.body - Expense fields (varies by category)
+ * @param {object} [req.files] - Optional uploaded files: image, slip, invoice
+ * @returns {201} The created expense document
+ * @returns {400} If category is invalid
+ */
 export const addExpense = async (req, res) => {
   try {
     const Model = models[req.params.category];
@@ -16,7 +32,6 @@ export const addExpense = async (req, res) => {
     if (req.files?.slip) data.slip = req.files.slip[0].path;
     if (req.files?.invoice) data.invoice = req.files.invoice[0].path;
     const expense = await Model.create(data);
-    // Auto-tick any wishlist items matching this category + item name
     const itemName = data.item || data.foodType || data.restaurant || data.from || null;
     autoTickByExpense(req.user.id, req.params.category, itemName).catch(() => {});
     res.status(201).json(expense);
@@ -25,6 +40,14 @@ export const addExpense = async (req, res) => {
   }
 };
 
+/**
+ * Returns all expenses for the authenticated user in a given category,
+ * sorted by date descending (newest first).
+ * @route GET /api/expenses/:category
+ * @param {string} req.params.category - Expense category key
+ * @returns {200} Array of expense documents
+ * @returns {400} If category is invalid
+ */
 export const getExpenses = async (req, res) => {
   try {
     const Model = models[req.params.category];
@@ -36,6 +59,17 @@ export const getExpenses = async (req, res) => {
   }
 };
 
+/**
+ * Updates an existing expense by ID.
+ * Only updates the expense if it belongs to the authenticated user.
+ * Handles optional file replacements for image, slip, invoice.
+ * @route PUT /api/expenses/:category/:id
+ * @param {string} req.params.category - Expense category key
+ * @param {string} req.params.id - MongoDB ObjectId of the expense
+ * @param {object} req.body - Updated expense fields
+ * @returns {200} The updated expense document
+ * @returns {404} If expense not found or not owned by user
+ */
 export const updateExpense = async (req, res) => {
   try {
     const Model = models[req.params.category];
@@ -56,6 +90,14 @@ export const updateExpense = async (req, res) => {
   }
 };
 
+/**
+ * Deletes an expense by ID.
+ * Only deletes if the expense belongs to the authenticated user.
+ * @route DELETE /api/expenses/:category/:id
+ * @param {string} req.params.category - Expense category key
+ * @param {string} req.params.id - MongoDB ObjectId of the expense
+ * @returns {200} { message: 'Deleted' }
+ */
 export const deleteExpense = async (req, res) => {
   try {
     const Model = models[req.params.category];
@@ -67,6 +109,13 @@ export const deleteExpense = async (req, res) => {
   }
 };
 
+/**
+ * Builds a MongoDB date filter for a given period and optional reference date.
+ * @param {'daily'|'weekly'|'monthly'|'yearly'} period - The time period
+ * @param {string} userId - The authenticated user's ID
+ * @param {string} [dateParam] - ISO date string to anchor the period (defaults to today)
+ * @returns {{ user: string, date: { $gte: Date, $lte: Date } }} Mongoose query filter
+ */
 const getPeriodFilter = (period, userId, dateParam) => {
   const ref = dateParam ? new Date(dateParam) : new Date();
   let start, end;
@@ -86,6 +135,14 @@ const getPeriodFilter = (period, userId, dateParam) => {
   return { user: userId, date: { $gte: start, $lte: end } };
 };
 
+/**
+ * Returns a spending summary for a given time period across all categories.
+ * Queries all 10 expense models in parallel and aggregates totals.
+ * @route GET /api/expenses/summary/:period
+ * @param {'daily'|'weekly'|'monthly'|'yearly'} req.params.period - Time period
+ * @param {string} [req.query.date] - ISO date string to anchor the period
+ * @returns {200} { period, grandTotal, breakdown: [{ category, total, count }] }
+ */
 export const getSummary = async (req, res) => {
   try {
     const { period } = req.params;

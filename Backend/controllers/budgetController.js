@@ -4,12 +4,21 @@ import {
   Furniture, Rent, Cosmetic, Takeout, DateExpense, Other
 } from '../models/Expense.js';
 
+/** Maps category keys to Mongoose expense models for spending calculations */
 const modelMap = {
   grocery: Grocery, transport: Transport, lunch: Lunch, garment: Garment,
   furniture: Furniture, rent: Rent, cosmetic: Cosmetic, takeout: Takeout,
   date: DateExpense, other: Other,
 };
 
+/**
+ * Calculates the start and end dates for the current budget period.
+ * For weekly budgets, advances the start date in 7-day increments from
+ * the budget's creation date until the current period is reached.
+ * @param {'daily'|'weekly'|'monthly'} period - Budget period type
+ * @param {Date} startDate - The date the budget was created
+ * @returns {{ start: Date, end: Date }} The current period's date range
+ */
 const getPeriodRange = (period, startDate) => {
   const now = new Date();
   let start;
@@ -28,6 +37,16 @@ const getPeriodRange = (period, startDate) => {
   return { start, end: now };
 };
 
+/**
+ * Creates a new named budget for the authenticated user.
+ * @route POST /api/budget
+ * @param {string} req.body.name - Budget name (e.g. "Monthly Groceries")
+ * @param {number} req.body.amount - Budget limit in Rands
+ * @param {'daily'|'weekly'|'monthly'} req.body.period - Tracking period
+ * @param {string[]} [req.body.categories] - Category keys to track (empty = all)
+ * @returns {201} The created budget document
+ * @returns {400} If name, amount, or period is missing
+ */
 export const createBudget = async (req, res) => {
   try {
     const { name, amount, period, categories } = req.body;
@@ -43,6 +62,11 @@ export const createBudget = async (req, res) => {
   }
 };
 
+/**
+ * Returns all budgets for the authenticated user, sorted newest first.
+ * @route GET /api/budget
+ * @returns {200} Array of budget documents
+ */
 export const getBudgets = async (req, res) => {
   try {
     const budgets = await Budget.find({ user: req.user.id }).sort({ createdAt: -1 });
@@ -52,6 +76,14 @@ export const getBudgets = async (req, res) => {
   }
 };
 
+/**
+ * Updates an existing budget's name, amount, period, or categories.
+ * Only updates if the budget belongs to the authenticated user.
+ * @route PUT /api/budget/:id
+ * @param {string} req.params.id - MongoDB ObjectId of the budget
+ * @returns {200} The updated budget document
+ * @returns {404} If budget not found or not owned by user
+ */
 export const updateBudget = async (req, res) => {
   try {
     const { name, amount, period, categories } = req.body;
@@ -67,6 +99,13 @@ export const updateBudget = async (req, res) => {
   }
 };
 
+/**
+ * Deletes a budget by ID.
+ * Only deletes if the budget belongs to the authenticated user.
+ * @route DELETE /api/budget/:id
+ * @param {string} req.params.id - MongoDB ObjectId of the budget
+ * @returns {200} { message: 'Deleted' }
+ */
 export const deleteBudget = async (req, res) => {
   try {
     await Budget.findOneAndDelete({ _id: req.params.id, user: req.user.id });
@@ -76,6 +115,21 @@ export const deleteBudget = async (req, res) => {
   }
 };
 
+/**
+ * Calculates the live spending status for a specific budget.
+ * Queries all tracked expense categories within the current budget period,
+ * computes total spent, remaining balance, percentage used, and alert level.
+ * Alert levels: '50' (≥50%), '75' (≥75%), 'limit' (=100%), 'overdraft' (>100%).
+ * @route GET /api/budget/:id/status
+ * @param {string} req.params.id - MongoDB ObjectId of the budget
+ * @returns {200} {
+ *   _id, name, budget, period, categories,
+ *   spent, remaining, percentage, alert,
+ *   breakdown: [{ category, total, count }],
+ *   periodStart
+ * }
+ * @returns {404} If budget not found or not owned by user
+ */
 export const getBudgetStatus = async (req, res) => {
   try {
     const budget = await Budget.findOne({ _id: req.params.id, user: req.user.id });

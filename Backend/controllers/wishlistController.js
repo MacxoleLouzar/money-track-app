@@ -1,5 +1,13 @@
 import Wishlist from '../models/Wishlist.js';
 
+/**
+ * Creates a new wishlist for the authenticated user.
+ * @route POST /api/wishlist
+ * @param {string} req.body.name - Wishlist name (e.g. "Weekly Shopping")
+ * @param {'daily'|'weekly'|'monthly'} req.body.period - Planning period
+ * @returns {201} The created wishlist document
+ * @returns {400} If name or period is missing
+ */
 export const createWishlist = async (req, res) => {
   try {
     const { name, period } = req.body;
@@ -9,6 +17,11 @@ export const createWishlist = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
+/**
+ * Returns all wishlists for the authenticated user, sorted newest first.
+ * @route GET /api/wishlist
+ * @returns {200} Array of wishlist documents with embedded items
+ */
 export const getWishlists = async (req, res) => {
   try {
     const wishlists = await Wishlist.find({ user: req.user.id }).sort({ createdAt: -1 });
@@ -16,6 +29,14 @@ export const getWishlists = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
+/**
+ * Updates a wishlist's name or period.
+ * Only updates if the wishlist belongs to the authenticated user.
+ * @route PUT /api/wishlist/:id
+ * @param {string} req.params.id - MongoDB ObjectId of the wishlist
+ * @returns {200} The updated wishlist document
+ * @returns {404} If wishlist not found or not owned by user
+ */
 export const updateWishlist = async (req, res) => {
   try {
     const { name, period } = req.body;
@@ -29,6 +50,13 @@ export const updateWishlist = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
+/**
+ * Deletes a wishlist and all its items.
+ * Only deletes if the wishlist belongs to the authenticated user.
+ * @route DELETE /api/wishlist/:id
+ * @param {string} req.params.id - MongoDB ObjectId of the wishlist
+ * @returns {200} { message: 'Deleted' }
+ */
 export const deleteWishlist = async (req, res) => {
   try {
     await Wishlist.findOneAndDelete({ _id: req.params.id, user: req.user.id });
@@ -36,6 +64,16 @@ export const deleteWishlist = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
+/**
+ * Adds a new item to a wishlist.
+ * @route POST /api/wishlist/:id/items
+ * @param {string} req.params.id - MongoDB ObjectId of the wishlist
+ * @param {string} req.body.name - Item name (e.g. "Milk")
+ * @param {string} req.body.category - Expense category key (e.g. "grocery")
+ * @param {string} [req.body.note] - Optional note (e.g. "2L full cream")
+ * @returns {200} The updated wishlist document
+ * @returns {400} If name or category is missing
+ */
 export const addItem = async (req, res) => {
   try {
     const { name, category, note } = req.body;
@@ -50,6 +88,13 @@ export const addItem = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
+/**
+ * Removes a specific item from a wishlist by item ID.
+ * @route DELETE /api/wishlist/:id/items/:itemId
+ * @param {string} req.params.id - MongoDB ObjectId of the wishlist
+ * @param {string} req.params.itemId - MongoDB ObjectId of the item to remove
+ * @returns {200} The updated wishlist document
+ */
 export const removeItem = async (req, res) => {
   try {
     const wishlist = await Wishlist.findOneAndUpdate(
@@ -62,6 +107,15 @@ export const removeItem = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
+/**
+ * Manually ticks or unticks a wishlist item.
+ * Sets boughtAt timestamp when marking as bought, clears it when unticking.
+ * @route PATCH /api/wishlist/:id/items/:itemId/tick
+ * @param {string} req.params.id - MongoDB ObjectId of the wishlist
+ * @param {string} req.params.itemId - MongoDB ObjectId of the item
+ * @param {boolean} req.body.bought - true to tick, false to untick
+ * @returns {200} The updated wishlist document
+ */
 export const tickItem = async (req, res) => {
   try {
     const { bought } = req.body;
@@ -75,7 +129,16 @@ export const tickItem = async (req, res) => {
   } catch (err) { res.status(500).json({ message: err.message }); }
 };
 
-// Called internally after an expense is saved — auto-tick matching wishlist items
+/**
+ * Automatically ticks wishlist items when a matching expense is saved.
+ * Called internally by expenseController after addExpense succeeds.
+ * Matches items case-insensitively by name and category.
+ * Uses MongoDB arrayFilters to update only the matching subdocument.
+ * @param {string} userId - The authenticated user's ID
+ * @param {string} category - The expense category key (e.g. 'grocery')
+ * @param {string|null} itemName - The item name from the expense (e.g. 'Milk')
+ * @returns {Promise<void>}
+ */
 export const autoTickByExpense = async (userId, category, itemName) => {
   if (!itemName) return;
   const name = itemName.toLowerCase().trim();
