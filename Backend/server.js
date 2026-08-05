@@ -15,7 +15,12 @@ const app = express();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 app.use(cors({
-  origin: ['https://macxolelouzar.github.io', 'http://localhost:5173', 'http://localhost:5174'],
+  origin: (origin, callback) => {
+    // Allow web origins, mobile apps (no origin), and localhost
+    const allowed = ['https://macxolelouzar.github.io', 'http://localhost:5173', 'http://localhost:5174'];
+    if (!origin || allowed.includes(origin)) return callback(null, true);
+    callback(null, true); // allow all for mobile clients
+  },
   credentials: true,
 }));
 app.use(express.json());
