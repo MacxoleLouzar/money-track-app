@@ -68,7 +68,7 @@ export default function Layout({ children }) {
 
       <main className="main-content">{children}</main>
 
-      {/* Mobile bottom bar — Home + Menu */}
+      {/* Mobile bottom bar */}
       <nav className="mobile-bottom-bar">
         <NavLink to="/home" className={({ isActive }) => `bottom-bar-btn ${isActive ? 'active' : ''}`} onClick={() => setOpen(false)}>
           <House size={20} />
@@ -81,6 +81,10 @@ export default function Layout({ children }) {
         <button className="bottom-bar-btn" onClick={() => setOpen(true)}>
           <Menu size={20} />
           <span>Menu</span>
+        </button>
+        <button className="bottom-bar-btn bottom-bar-logout" onClick={handleLogout}>
+          <LogOut size={20} />
+          <span>Logout</span>
         </button>
       </nav>
     </div>
