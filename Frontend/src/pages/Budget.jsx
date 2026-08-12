@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { Plus, Trash2, ChevronDown, ChevronUp, Pencil, X, ShoppingBag, Search } from 'lucide-react';
 import { CATEGORY_FIELDS } from '../utils/categoryFields';
 import { API_URL } from '../utils/api';
+import { useToast, ToastContainer } from '../components/Toast';
 import '../css/dashboard.css';
 import '../css/budget.css';
 
@@ -63,6 +64,8 @@ export default function Budget() {
   const [expForm, setExpForm]                   = useState({});
   const [expSaving, setExpSaving]               = useState(false);
 
+  const { toasts, toast } = useToast();
+
   const fetchBudgets = async () => {
     setLoading(true);
     const res = await fetch(BAPI, { headers });
@@ -110,10 +113,14 @@ export default function Budget() {
     setBudgetSaving(true); setBudgetError('');
     const body = JSON.stringify({ ...budgetForm, amount: Number(budgetForm.amount) });
     if (editingBudget) {
-      await fetch(`${BAPI}/${editingBudget._id}`, { method: 'PUT', headers, body });
+      const res = await fetch(`${BAPI}/${editingBudget._id}`, { method: 'PUT', headers, body });
+      if (res.ok) toast('Budget updated successfully');
+      else toast('Error: unable to update budget', 'error');
       setStatuses(s => { const n = { ...s }; delete n[editingBudget._id]; return n; });
     } else {
-      await fetch(BAPI, { method: 'POST', headers, body });
+      const res = await fetch(BAPI, { method: 'POST', headers, body });
+      if (res.ok) toast('Budget created successfully');
+      else toast('Error: unable to create budget', 'error');
     }
     setBudgetSaving(false);
     setShowBudgetForm(false);
@@ -122,7 +129,9 @@ export default function Budget() {
 
   const handleDeleteBudget = async (id) => {
     if (!confirm('Delete this budget?')) return;
-    await fetch(`${BAPI}/${id}`, { method: 'DELETE', headers });
+    const res = await fetch(`${BAPI}/${id}`, { method: 'DELETE', headers });
+    if (res.ok) toast('Budget deleted');
+    else toast('Error: unable to delete budget', 'error');
     setBudgets(b => b.filter(x => x._id !== id));
     if (expanded === id) setExpanded(null);
   };
@@ -141,14 +150,15 @@ export default function Budget() {
   const handleExpSubmit = async e => {
     e.preventDefault();
     setExpSaving(true);
-    await fetch(`${API_URL}/expenses/${expCategory}`, {
+    const res = await fetch(`${API_URL}/expenses/${expCategory}`, {
       method: 'POST',
       headers,
       body: JSON.stringify(expForm),
     });
+    if (res.ok) toast('Expense added successfully');
+    else toast('Error: unable to add expense', 'error');
     setExpSaving(false);
     setShowExpenseModal(false);
-    // Refresh this budget's status
     fetchStatus(activeBudgetId);
   };
 
@@ -301,6 +311,8 @@ export default function Budget() {
           })}
         </div>
       )}
+
+      <ToastContainer toasts={toasts} />
 
       {/* ── Budget Create/Edit Modal ── */}
       {showBudgetForm && (

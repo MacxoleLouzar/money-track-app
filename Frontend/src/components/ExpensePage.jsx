@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Modal from './Modal';
 import FileField from './FileField';
 import BarcodeScanner from './BarcodeScanner';
+import { useToast, ToastContainer } from './Toast';
 import '../css/dashboard.css';
 
 import { API_URL } from '../utils/api';
@@ -21,6 +22,7 @@ export default function ExpensePage({ category, title, fields, scannable = false
   const [files, setFiles] = useState({});
   const [saving, setSaving] = useState(false);
   const [page, setPage] = useState(1);
+  const { toasts, toast } = useToast();
   const [showScanner, setShowScanner] = useState(false);
   const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
@@ -103,16 +105,27 @@ export default function ExpensePage({ category, title, fields, scannable = false
     const method = editing ? 'PUT' : 'POST';
     const reqHeaders = { Authorization: `Bearer ${token}`, ...(contentType ? { 'Content-Type': contentType } : {}) };
 
-    await fetch(url, { method, headers: reqHeaders, body });
+    const res = await fetch(url, { method, headers: reqHeaders, body });
     setSaving(false);
-    setShowModal(false);
-    fetchExpenses();
+    if (res.ok) {
+      toast(editing ? `${title} updated successfully` : `${title} added successfully`);
+      setShowModal(false);
+      fetchExpenses();
+    } else {
+      const err = await res.json().catch(() => ({}));
+      toast(err.message || `Error: unable to ${editing ? 'update' : 'add'} ${title.toLowerCase()}`, 'error');
+    }
   };
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this expense?')) return;
-    await fetch(`${API}/${category}/${id}`, { method: 'DELETE', headers });
-    fetchExpenses();
+    const res = await fetch(`${API}/${category}/${id}`, { method: 'DELETE', headers });
+    if (res.ok) {
+      toast(`${title} deleted`);
+      fetchExpenses();
+    } else {
+      toast(`Error: unable to delete ${title.toLowerCase()}`, 'error');
+    }
   };
 
   const displayFields = fields.filter(f => f.type !== 'file');
@@ -237,6 +250,7 @@ export default function ExpensePage({ category, title, fields, scannable = false
         )}
       </div>
 
+      <ToastContainer toasts={toasts} />
       {showScanner && <BarcodeScanner onScan={handleScan} onClose={() => setShowScanner(false)} />}
 
       {showModal && (

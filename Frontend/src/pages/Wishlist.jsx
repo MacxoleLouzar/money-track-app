@@ -4,6 +4,7 @@ import { Plus, Trash2, ChevronDown, ChevronUp, Pencil, X, CheckCircle2, Circle, 
 import '../css/dashboard.css';
 import '../css/wishlist.css';
 import { API_URL } from '../utils/api';
+import { useToast, ToastContainer } from '../components/Toast';
 
 const PERIODS = ['daily', 'weekly', 'monthly'];
 const ALL_CATEGORIES = [
@@ -46,6 +47,8 @@ export default function Wishlist() {
   const [itemForm, setItemForm]           = useState({ name: '', category: 'grocery', note: '' });
   const [itemSaving, setItemSaving]       = useState(false);
 
+  const { toasts, toast } = useToast();
+
   const fetchLists = async () => {
     setLoading(true);
     const res = await fetch(WAPI, { headers });
@@ -69,10 +72,12 @@ export default function Wishlist() {
     if (editingList) {
       const res = await fetch(`${WAPI}/${editingList._id}`, { method: 'PUT', headers, body: JSON.stringify(listForm) });
       const updated = await res.json();
-      setLists(ls => ls.map(l => l._id === updated._id ? updated : l));
+      if (res.ok) { toast('Wishlist updated successfully'); setLists(ls => ls.map(l => l._id === updated._id ? updated : l)); }
+      else toast('Error: unable to update wishlist', 'error');
     } else {
-      await fetch(WAPI, { method: 'POST', headers, body: JSON.stringify(listForm) });
-      fetchLists();
+      const res = await fetch(WAPI, { method: 'POST', headers, body: JSON.stringify(listForm) });
+      if (res.ok) { toast('Wishlist created successfully'); fetchLists(); }
+      else toast('Error: unable to create wishlist', 'error');
     }
     setListSaving(false);
     setShowListForm(false);
@@ -80,7 +85,9 @@ export default function Wishlist() {
 
   const handleDeleteList = async (id) => {
     if (!confirm('Delete this wishlist?')) return;
-    await fetch(`${WAPI}/${id}`, { method: 'DELETE', headers });
+    const res = await fetch(`${WAPI}/${id}`, { method: 'DELETE', headers });
+    if (res.ok) toast('Wishlist deleted');
+    else toast('Error: unable to delete wishlist', 'error');
     setLists(ls => ls.filter(l => l._id !== id));
     if (expanded === id) setExpanded(null);
   };
@@ -94,7 +101,8 @@ export default function Wishlist() {
     setItemSaving(true);
     const res = await fetch(`${WAPI}/${activeListId}/items`, { method: 'POST', headers, body: JSON.stringify(itemForm) });
     const updated = await res.json();
-    setLists(ls => ls.map(l => l._id === updated._id ? updated : l));
+    if (res.ok) { toast('Item added'); setLists(ls => ls.map(l => l._id === updated._id ? updated : l)); }
+    else toast('Error: unable to add item', 'error');
     setItemSaving(false);
     setShowItemForm(false);
   };
@@ -102,7 +110,8 @@ export default function Wishlist() {
   const handleRemoveItem = async (listId, itemId) => {
     const res = await fetch(`${WAPI}/${listId}/items/${itemId}`, { method: 'DELETE', headers });
     const updated = await res.json();
-    setLists(ls => ls.map(l => l._id === updated._id ? updated : l));
+    if (res.ok) { toast('Item removed'); setLists(ls => ls.map(l => l._id === updated._id ? updated : l)); }
+    else toast('Error: unable to remove item', 'error');
   };
 
   const handleTick = async (listId, itemId, current) => {
@@ -238,6 +247,8 @@ export default function Wishlist() {
           })}
         </div>
       )}
+
+      <ToastContainer toasts={toasts} />
 
       {/* ── Create/Edit List Modal ── */}
       {showListForm && (

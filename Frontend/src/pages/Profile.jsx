@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { API_URL } from '../utils/api';
 import { User, Mail, Lock, Pencil, Check, X } from 'lucide-react';
+import { useToast, ToastContainer } from '../components/Toast';
 import '../css/profile.css';
 
 export default function Profile() {
@@ -9,7 +10,7 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Edit name state
+  const { toasts, toast } = useToast();
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState('');
   const [nameMsg, setNameMsg] = useState('');
@@ -40,11 +41,13 @@ export default function Profile() {
     const data = await res.json();
     if (res.ok) {
       setProfile(p => ({ ...p, name: data.name }));
-      login(data, token); // update AuthContext
+      login(data, token);
       setEditingName(false);
       setNameMsg('');
+      toast('Name updated successfully');
     } else {
       setNameMsg(data.message || 'Failed to update name');
+      toast('Error: unable to update name', 'error');
     }
     setNameSaving(false);
   };
@@ -62,9 +65,11 @@ export default function Profile() {
     const data = await res.json();
     if (res.ok) {
       setPwSuccess(true);
+      toast('Password updated successfully');
       setPwForm({ currentPassword: '', newPassword: '', confirm: '' });
     } else {
       setPwMsg(data.message || 'Failed to update password');
+      toast(data.message || 'Error: unable to update password', 'error');
     }
     setPwSaving(false);
   };
@@ -73,6 +78,7 @@ export default function Profile() {
 
   return (
     <div className="profile-page">
+      <ToastContainer toasts={toasts} />
       <div className="page-header">
         <div>
           <h1 className="page-title">Profile</h1>
