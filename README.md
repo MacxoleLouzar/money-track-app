@@ -16,7 +16,8 @@ A full-stack personal expense tracker to monitor daily spending across multiple 
 | Auth | JWT + bcryptjs |
 | File Uploads | Multer |
 | Frontend | React + Vite |
-| Scanning | html5-qrcode |
+| Scanning | @yudiel/react-qr-scanner + native BarcodeDetector API |
+| Product Lookup | Open Food Facts API (free, no key) |
 | Deployment | GitHub Pages (frontend) + Render (backend) |
 
 ---
@@ -24,14 +25,18 @@ A full-stack personal expense tracker to monitor daily spending across multiple 
 ## Features
 
 - 🔐 Sign Up / Sign In per user (JWT auth)
+- 👤 Profile page — view account info, edit name, change password
 - 📦 10 expense categories with full field tracking
 - 📎 File uploads: images, slips, invoices (jpeg, png, pdf, docx)
 - 📊 Analytics: Daily, Weekly, Monthly, Yearly summaries with custom date picker
-- 📱 Mobile-first layout: floating hamburger, bottom nav bar (Home + Menu), scrollable sidebar
+- ⚖️ Period Comparison: Compare any two periods (daily/weekly/monthly/yearly) with amount diff, % change, and Saved/Over/Same status per category
+- 📱 Mobile-first layout: floating hamburger, bottom nav bar (Home + Profile + Menu), scrollable sidebar
 - 📄 Pagination (10 records per page) with horizontal + vertical table scroll
-- 🔍 Barcode & QR code scanning in all categories — via camera or image upload
+- 🔍 Barcode & QR code scanning — via camera (native BarcodeDetector) or image upload
+- 🏷️ Product name auto-fill from Open Food Facts after barcode scan
 - 💰 Named budgets with per-period tracking, progress bar, 50/75/100/overdraft alerts, category breakdown
 - 🛒 Wishlists with item tick/untick, auto-tick when matching expense is added, progress bar
+- 🔔 Toast notifications for all add, update, and delete actions (success & error)
 - 🗂️ REST API tested via `API.rest`
 
 ---
@@ -124,6 +129,8 @@ SPA routing is handled by `public/404.html` which redirects all paths to `index.
 |--------|----------|-------------|
 | POST | `/api/auth/signup` | Register new user |
 | POST | `/api/auth/signin` | Login, returns JWT token |
+| GET | `/api/auth/profile` | Get authenticated user's profile |
+| PUT | `/api/auth/profile` | Update name or password |
 
 ### Expenses (all require `Authorization: Bearer <token>`)
 | Method | Endpoint | Description |
@@ -169,12 +176,53 @@ SPA routing is handled by `public/404.html` which redirects all paths to `index.
 
 Every category has a **Scan** button that opens a scanner modal with two modes:
 
-- **Use Camera** — activates the rear camera and auto-detects barcodes/QR codes in real time
-- **Scan from Image** — pick a photo from your gallery or files (e.g. a product photo or slip)
+- **Use Camera** — activates the rear camera using the native `BarcodeDetector` API for fast, real-time scanning
+- **Scan from Image** — pick a photo from your gallery or files
 
-On a successful scan the add form opens pre-filled with the scanned value in the barcode field and the first relevant text field of that category.
+On a successful scan:
+1. The barcode value is looked up against the **Open Food Facts** database
+2. If found, the item name (brand + product name) and store are pre-filled in the form
+3. If not found, the raw barcode value is placed in the item field
 
 **Supported formats:** EAN-13, EAN-8, UPC-A, UPC-E, Code 128, Code 39, QR Code, Data Matrix and more.
+
+---
+
+## Period Comparison
+
+The **Analytics** page has a **Compare** tab that lets you compare any two periods side by side:
+
+- Select period type: Daily / Weekly / Monthly / Yearly
+- Pick Period A and Period B using date pickers
+- Results show per-category cards with:
+  - Amount for each period
+  - Difference in Rands
+  - Percentage change
+  - Status badge: ✅ Saved / ⚠️ Over / ➡️ Same
+  - Visual bar chart (blue = Period A, grey = Period B)
+- Overall summary banner showing total saved or overspent
+
+---
+
+## Toast Notifications
+
+All create, update, and delete actions show a toast notification at the bottom of the screen:
+
+- ✅ Green — success (e.g. "Groceries added successfully")
+- ❌ Red — error (e.g. "Error: unable to delete expense")
+- Auto-dismisses after 3.5 seconds
+- Works on both mobile and desktop
+
+---
+
+## Profile Page
+
+Accessible via the sidebar or bottom nav Profile button:
+
+- Displays avatar (initials), full name, email, and member since date
+- Edit name inline
+- Change password (requires current password verification)
+- Email is read-only
 
 ---
 
@@ -192,7 +240,8 @@ Uploaded files are stored in `Backend/uploads/`.
 ## Mobile Layout
 
 - No topbar — floating hamburger button fixed at top-right
-- Bottom navigation bar with **Home** and **Menu** buttons
+- Bottom navigation bar with **Home**, **Profile**, and **Menu** buttons
+- Profile avatar (initials) shown in sidebar footer and bottom bar
 - Sidebar slides in on Menu click, closes on nav item or Home click
 - Sidebar nav scrolls vertically if items overflow the screen
 - Category summary cards scroll horizontally on small screens
@@ -247,7 +296,8 @@ Bugdet_App/
         │   ├── ExpensePage.jsx
         │   ├── FileField.jsx
         │   ├── Layout.jsx
-        │   └── Modal.jsx
+        │   ├── Modal.jsx
+        │   └── Toast.jsx
         ├── context/
         │   └── AuthContext.jsx
         ├── css/
@@ -255,6 +305,7 @@ Bugdet_App/
         │   ├── budget.css
         │   ├── dashboard.css
         │   ├── layout.css
+        │   ├── profile.css
         │   └── wishlist.css
         ├── utils/
         │   ├── api.js
@@ -273,6 +324,7 @@ Bugdet_App/
             ├── Other.jsx
             ├── Budget.jsx
             ├── Wishlist.jsx
+            ├── Profile.jsx
             ├── SignIn.jsx
             └── SignUp.jsx
 ```
