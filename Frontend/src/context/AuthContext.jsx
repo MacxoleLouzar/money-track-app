@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
 
 const AuthContext = createContext();
 
@@ -13,15 +13,32 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('token', jwt);
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     setToken('');
     localStorage.removeItem('user');
     localStorage.removeItem('token');
-  };
+  }, []);
+
+  /**
+   * Wrapper around fetch that auto-logs out on 401 Invalid token.
+   * Use this instead of raw fetch for all authenticated requests.
+   */
+  const authFetch = useCallback(async (url, options = {}) => {
+    const res = await fetch(url, options);
+    if (res.status === 401) {
+      const data = await res.clone().json().catch(() => ({}));
+      if (data.message === 'Invalid token' || data.message === 'No token') {
+        logout();
+        window.location.href = window.location.origin + (import.meta.env.BASE_URL || '/') + 'signin';
+        return res;
+      }
+    }
+    return res;
+  }, [logout]);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, authFetch }}>
       {children}
     </AuthContext.Provider>
   );

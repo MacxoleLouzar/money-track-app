@@ -13,7 +13,7 @@ const API = `${API_URL}/expenses`;
 const PAGE_SIZE = 10;
 
 export default function ExpensePage({ category, title, fields, scannable = false }) {
-  const { token } = useAuth();
+  const { token, authFetch } = useAuth();
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -32,7 +32,7 @@ export default function ExpensePage({ category, title, fields, scannable = false
 
   const fetchExpenses = () => {
     setLoading(true);
-    fetch(`${API}/${category}`, { headers })
+    authFetch(`${API}/${category}`, { headers })
       .then(r => r.json())
       .then(data => { setExpenses(Array.isArray(data) ? data : []); setPage(1); })
       .finally(() => setLoading(false));
@@ -105,7 +105,7 @@ export default function ExpensePage({ category, title, fields, scannable = false
     const method = editing ? 'PUT' : 'POST';
     const reqHeaders = { Authorization: `Bearer ${token}`, ...(contentType ? { 'Content-Type': contentType } : {}) };
 
-    const res = await fetch(url, { method, headers: reqHeaders, body });
+    const res = await authFetch(url, { method, headers: reqHeaders, body });
     setSaving(false);
     if (res.ok) {
       toast(editing ? `${title} updated successfully` : `${title} added successfully`);
@@ -119,7 +119,7 @@ export default function ExpensePage({ category, title, fields, scannable = false
 
   const handleDelete = async (id) => {
     if (!confirm('Delete this expense?')) return;
-    const res = await fetch(`${API}/${category}/${id}`, { method: 'DELETE', headers });
+    const res = await authFetch(`${API}/${category}/${id}`, { method: 'DELETE', headers });
     if (res.ok) {
       toast(`${title} deleted`);
       fetchExpenses();

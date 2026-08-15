@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "MoneyTrack",
+    "slug": "money-track-mobile",
+    "version": "1.0.0",
+    "sdkVersion": "52.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1a56db"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Used for barcode and QR code scanning",
+        "NSPhotoLibraryUsageDescription": "Used to attach images and receipts to expenses"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#1a56db",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow MoneyTrack to access your camera for barcode scanning."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow MoneyTrack to access your photos to attach receipts."
+        }
+      ]
+    ]
+  }
+}
