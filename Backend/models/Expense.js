@@ -16,6 +16,7 @@ const grocerySchema = new mongoose.Schema({
 const transportSchema = new mongoose.Schema({
   ...base,
   from: String, destination: String,
+  reason: String,
   mode: { type: String, enum: ['Uber', 'Taxi', 'Train', 'Flight'] },
   price: Number, barcode: String,
 });

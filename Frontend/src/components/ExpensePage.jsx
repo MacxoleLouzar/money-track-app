@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import Modal from './Modal';
 import FileField from './FileField';
 import BarcodeScanner from './BarcodeScanner';
+import LocationPicker from './LocationPicker';
 import { useToast, ToastContainer } from './Toast';
 import '../css/dashboard.css';
 
@@ -265,6 +266,13 @@ export default function ExpensePage({ category, title, fields, scannable = false
                       <option value="">Select...</option>
                       {f.options.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
+                  ) : f.type === 'location' ? (
+                    <LocationPicker
+                      label={f.label}
+                      name={f.name}
+                      value={form[f.name] || ''}
+                      onChange={handleChange}
+                    />
                   ) : f.type === 'checkbox' ? (
                     <select className="form-select" name={f.name} value={form[f.name] ?? ''} onChange={handleChange}>
                       <option value="">Select...</option>
