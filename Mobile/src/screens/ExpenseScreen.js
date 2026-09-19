@@ -82,8 +82,9 @@ export default function ExpenseScreen({ category, title, fields }) {
 
   const handleSubmit = async () => {
     setSaving(true);
-    const url = editing ? `${API}/${category}/${editing._id}` : `${API}/${category}`;
-    const method = editing ? 'PUT' : 'POST';
+    const eid = editing?.id || editing?._id;
+    const url = eid ? `${API}/${category}/${eid}` : `${API}/${category}`;
+    const method = eid ? 'PUT' : 'POST';
     await fetch(url, { method, headers: authHeaders(token), body: JSON.stringify(form) });
     setSaving(false);
     setShowForm(false);
@@ -126,7 +127,7 @@ export default function ExpenseScreen({ category, title, fields }) {
         <TouchableOpacity style={styles.iconBtn} onPress={() => openEdit(item)}>
           <Ionicons name="pencil" size={16} color={COLORS.primary} />
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.iconBtn, { backgroundColor: COLORS.dangerLight }]} onPress={() => handleDelete(item._id)}>
+        <TouchableOpacity style={[styles.iconBtn, { backgroundColor: COLORS.dangerLight }]} onPress={() => handleDelete(item.id || item._id)}>
           <Ionicons name="trash" size={16} color={COLORS.danger} />
         </TouchableOpacity>
       </View>
@@ -157,7 +158,7 @@ export default function ExpenseScreen({ category, title, fields }) {
       ) : (
         <FlatList
           data={paginated}
-          keyExtractor={i => i._id}
+          keyExtractor={i => i.id || i._id}
           renderItem={renderItem}
           contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchExpenses(); }} />}

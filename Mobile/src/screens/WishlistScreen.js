@@ -31,6 +31,8 @@ export default function WishlistScreen() {
   const [itemForm, setItemForm] = useState({ name: '', category: 'grocery', note: '' });
   const [itemSaving, setItemSaving] = useState(false);
 
+  const wid = (l) => l.id || l._id;
+
   const fetchLists = async (silent = false) => {
     if (!silent) setLoading(true);
     const res = await fetch(WAPI, { headers });
@@ -51,9 +53,9 @@ export default function WishlistScreen() {
     if (!listForm.name.trim()) { setListError('Name is required.'); return; }
     setListSaving(true); setListError('');
     if (editingList) {
-      const res = await fetch(`${WAPI}/${editingList._id}`, { method: 'PUT', headers, body: JSON.stringify(listForm) });
+      const res = await fetch(`${WAPI}/${wid(editingList)}`, { method: 'PUT', headers, body: JSON.stringify(listForm) });
       const updated = await res.json();
-      setLists(ls => ls.map(l => l._id === updated._id ? updated : l));
+      setLists(ls => ls.map(l => wid(l) === wid(updated) ? updated : l));
     } else {
       await fetch(WAPI, { method: 'POST', headers, body: JSON.stringify(listForm) });
       fetchLists(true);
@@ -66,7 +68,7 @@ export default function WishlistScreen() {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
         await fetch(`${WAPI}/${id}`, { method: 'DELETE', headers });
-        setLists(ls => ls.filter(l => l._id !== id));
+        setLists(ls => ls.filter(l => wid(l) !== id));
         if (expanded === id) setExpanded(null);
       }},
     ]);
@@ -79,43 +81,43 @@ export default function WishlistScreen() {
     setItemSaving(true);
     const res = await fetch(`${WAPI}/${activeListId}/items`, { method: 'POST', headers, body: JSON.stringify(itemForm) });
     const updated = await res.json();
-    setLists(ls => ls.map(l => l._id === updated._id ? updated : l));
+    setLists(ls => ls.map(l => wid(l) === wid(updated) ? updated : l));
     setItemSaving(false); setShowItemForm(false);
   };
 
   const handleRemoveItem = async (listId, itemId) => {
     const res = await fetch(`${WAPI}/${listId}/items/${itemId}`, { method: 'DELETE', headers });
     const updated = await res.json();
-    setLists(ls => ls.map(l => l._id === updated._id ? updated : l));
+    setLists(ls => ls.map(l => wid(l) === wid(updated) ? updated : l));
   };
 
   const handleTick = async (listId, itemId, current) => {
     const res = await fetch(`${WAPI}/${listId}/items/${itemId}/tick`, { method: 'PATCH', headers, body: JSON.stringify({ bought: !current }) });
     const updated = await res.json();
-    setLists(ls => ls.map(l => l._id === updated._id ? updated : l));
+    setLists(ls => ls.map(l => wid(l) === wid(updated) ? updated : l));
   };
 
   const renderList = ({ item: l }) => {
-    const isOpen = expanded === l._id;
+    const isOpen = expanded === wid(l);
     const bought = l.items.filter(i => i.bought).length;
     const total = l.items.length;
     const pct = total > 0 ? Math.round((bought / total) * 100) : 0;
 
     return (
       <View style={styles.card}>
-        <TouchableOpacity style={shared.spaceBetween} onPress={() => toggleExpand(l._id)}>
+        <TouchableOpacity style={shared.spaceBetween} onPress={() => toggleExpand(wid(l))}>
           <View style={{ flex: 1 }}>
             <Text style={styles.listName}>{l.name}</Text>
             <Text style={styles.listMeta}>{l.period} · {bought}/{total} bought · {pct}%</Text>
           </View>
           <View style={shared.row}>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => openAddItem(l._id)}>
+            <TouchableOpacity style={styles.iconBtn} onPress={() => openAddItem(wid(l))}>
               <Ionicons name="add" size={16} color={COLORS.primary} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconBtn} onPress={() => openEdit(l)}>
               <Ionicons name="pencil" size={16} color={COLORS.primary} />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.iconBtn, { backgroundColor: COLORS.dangerLight }]} onPress={() => handleDeleteList(l._id)}>
+            <TouchableOpacity style={[styles.iconBtn, { backgroundColor: COLORS.dangerLight }]} onPress={() => handleDeleteList(wid(l))}>
               <Ionicons name="trash" size={16} color={COLORS.danger} />
             </TouchableOpacity>
             <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.textMuted} style={{ marginLeft: 4 }} />
@@ -135,8 +137,8 @@ export default function WishlistScreen() {
               <Text style={{ color: COLORS.textMuted, fontSize: 14, textAlign: 'center', paddingVertical: 8 }}>No items yet. Tap + to add.</Text>
             ) : (
               l.items.map(item => (
-                <View key={item._id} style={[styles.wlItem, item.bought && styles.wlItemBought]}>
-                  <TouchableOpacity onPress={() => handleTick(l._id, item._id, item.bought)}>
+                <View key={item.id || item._id} style={[styles.wlItem, item.bought && styles.wlItemBought]}>
+                  <TouchableOpacity onPress={() => handleTick(wid(l), item.id || item._id, item.bought)}>
                     <Ionicons
                       name={item.bought ? 'checkmark-circle' : 'ellipse-outline'}
                       size={22}
@@ -148,7 +150,7 @@ export default function WishlistScreen() {
                     <Text style={styles.itemCat}>{ALL_CATEGORIES.find(c => c.key === item.category)?.emoji} {item.category}</Text>
                     {item.note ? <Text style={styles.itemNote}>{item.note}</Text> : null}
                   </View>
-                  <TouchableOpacity onPress={() => handleRemoveItem(l._id, item._id)}>
+                  <TouchableOpacity onPress={() => handleRemoveItem(wid(l), item.id || item._id)}>
                     <Ionicons name="close" size={18} color={COLORS.textMuted} />
                   </TouchableOpacity>
                 </View>
@@ -168,7 +170,7 @@ export default function WishlistScreen() {
     <View style={shared.container}>
       <FlatList
         data={lists}
-        keyExtractor={i => i._id}
+        keyExtractor={i => i.id || i._id}
         renderItem={renderList}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchLists(); }} />}

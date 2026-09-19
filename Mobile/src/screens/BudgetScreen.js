@@ -48,6 +48,8 @@ export default function BudgetScreen() {
   const [expForm, setExpForm] = useState({});
   const [expSaving, setExpSaving] = useState(false);
 
+  const bid = (b) => b.id || b._id;
+
   const fetchBudgets = async (silent = false) => {
     if (!silent) setLoading(true);
     const res = await fetch(BAPI, { headers });
@@ -87,8 +89,8 @@ export default function BudgetScreen() {
     setSaving(true); setFormError('');
     const body = JSON.stringify({ ...budgetForm, amount: Number(budgetForm.amount) });
     if (editingBudget) {
-      await fetch(`${BAPI}/${editingBudget._id}`, { method: 'PUT', headers, body });
-      setStatuses(s => { const n = { ...s }; delete n[editingBudget._id]; return n; });
+      await fetch(`${BAPI}/${bid(editingBudget)}`, { method: 'PUT', headers, body });
+      setStatuses(s => { const n = { ...s }; delete n[bid(editingBudget)]; return n; });
     } else {
       await fetch(BAPI, { method: 'POST', headers, body });
     }
@@ -101,7 +103,7 @@ export default function BudgetScreen() {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
         await fetch(`${BAPI}/${id}`, { method: 'DELETE', headers });
-        setBudgets(b => b.filter(x => x._id !== id));
+        setBudgets(b => b.filter(x => bid(x) !== id));
         if (expanded === id) setExpanded(null);
       }},
     ]);
@@ -123,30 +125,30 @@ export default function BudgetScreen() {
     fetchStatus(activeBudgetId);
   };
 
-  const activeBudget = budgets.find(b => b._id === activeBudgetId);
+  const activeBudget = budgets.find(b => bid(b) === activeBudgetId);
   const expCats = activeBudget ? (activeBudget.categories.length > 0 ? activeBudget.categories : ALL_CATEGORIES.map(c => c.key)) : [];
   const expFields = (CATEGORY_FIELDS[expCategory] || []).filter(f => f.type !== 'file');
 
   const renderBudget = ({ item: b }) => {
-    const st = statuses[b._id];
-    const isOpen = expanded === b._id;
+    const st = statuses[bid(b)];
+    const isOpen = expanded === bid(b);
     const cfg = st ? alertConfig(st.alert) : null;
 
     return (
       <View style={styles.card}>
-        <TouchableOpacity style={shared.spaceBetween} onPress={() => toggleExpand(b._id)}>
+        <TouchableOpacity style={shared.spaceBetween} onPress={() => toggleExpand(bid(b))}>
           <View style={{ flex: 1 }}>
             <Text style={styles.budgetName}>{b.name}</Text>
             <Text style={styles.budgetMeta}>R {Number(b.amount).toFixed(2)} · {b.period}</Text>
           </View>
           <View style={shared.row}>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => openAddExpense(b._id, b.categories)}>
+            <TouchableOpacity style={styles.iconBtn} onPress={() => openAddExpense(bid(b), b.categories)}>
               <Ionicons name="bag-add" size={16} color={COLORS.primary} />
             </TouchableOpacity>
             <TouchableOpacity style={styles.iconBtn} onPress={() => openEdit(b)}>
               <Ionicons name="pencil" size={16} color={COLORS.primary} />
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.iconBtn, { backgroundColor: COLORS.dangerLight }]} onPress={() => handleDelete(b._id)}>
+            <TouchableOpacity style={[styles.iconBtn, { backgroundColor: COLORS.dangerLight }]} onPress={() => handleDelete(bid(b))}>
               <Ionicons name="trash" size={16} color={COLORS.danger} />
             </TouchableOpacity>
             <Ionicons name={isOpen ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.textMuted} style={{ marginLeft: 4 }} />
@@ -191,7 +193,7 @@ export default function BudgetScreen() {
                   </View>
                 )}
 
-                <TouchableOpacity style={[shared.btnPrimary, { marginTop: 12 }]} onPress={() => openAddExpense(b._id, b.categories)}>
+                <TouchableOpacity style={[shared.btnPrimary, { marginTop: 12 }]} onPress={() => openAddExpense(bid(b), b.categories)}>
                   <Ionicons name="add" size={18} color="#fff" />
                   <Text style={shared.btnText}>Add Expense</Text>
                 </TouchableOpacity>
@@ -207,7 +209,7 @@ export default function BudgetScreen() {
     <View style={shared.container}>
       <FlatList
         data={budgets}
-        keyExtractor={i => i._id}
+        keyExtractor={i => i.id || i._id}
         renderItem={renderBudget}
         contentContainerStyle={{ padding: 16, paddingBottom: 100 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchBudgets(); }} />}

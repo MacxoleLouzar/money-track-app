@@ -10,11 +10,12 @@ export const CATEGORY_FIELDS = {
     { name: 'onSale', label: 'On Sale?', type: 'boolean' },
   ],
   transport: [
-    { name: 'from', label: 'From' },
-    { name: 'destination', label: 'Destination' },
-    { name: 'mode', label: 'Mode', type: 'select', options: ['Uber', 'Taxi', 'Train', 'Flight'] },
-    { name: 'price', label: 'Price', type: 'number' },
-    { name: 'barcode', label: 'Barcode' },
+    { name: 'from',        label: 'From',             type: 'location' },
+    { name: 'destination', label: 'Destination',       type: 'location' },
+    { name: 'reason',      label: 'Reason for Travel' },
+    { name: 'mode',        label: 'Mode',              type: 'select', options: ['Uber', 'Taxi', 'Train', 'Flight'] },
+    { name: 'price',       label: 'Price',             type: 'number' },
+    { name: 'barcode',     label: 'Barcode' },
   ],
   lunch: [
     { name: 'foodType', label: 'Food Type' },

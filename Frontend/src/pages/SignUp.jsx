@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import '../css/auth.css';
 import { API_URL } from '../utils/api';
@@ -10,6 +11,7 @@ export default function SignUp() {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [gLoading, setGLoading] = useState(false);
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -33,6 +35,30 @@ export default function SignUp() {
     }
   };
 
+  const handleGoogle = useGoogleLogin({
+    flow: 'implicit',
+    scope: 'openid email profile',
+    onSuccess: async ({ access_token }) => {
+      setGLoading(true); setError('');
+      try {
+        const res = await fetch(`${API_URL}/auth/google`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accessToken: access_token }),
+        });
+        const data = await res.json();
+        if (!res.ok) { setError(data.message || 'Google sign-in failed'); return; }
+        login(data.user, data.token);
+        navigate('/dashboard');
+      } catch {
+        setError('Google sign-in failed. Try again.');
+      } finally {
+        setGLoading(false);
+      }
+    },
+    onError: () => setError('Google sign-in was cancelled.'),
+  });
+
   return (
     <div className="auth-container">
       <div className="auth-card">
@@ -45,6 +71,11 @@ export default function SignUp() {
           <input className="auth-input" type="password" name="password" placeholder="Password" value={form.password} onChange={handleChange} required />
           <button className="auth-btn" type="submit" disabled={loading}>{loading ? 'Creating...' : 'Sign Up'}</button>
         </form>
+        <div className="auth-divider"><span>or</span></div>
+        <button className="auth-btn-google" onClick={() => handleGoogle()} disabled={gLoading}>
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="G" width={20} />
+          {gLoading ? 'Signing in...' : 'Continue with Google'}
+        </button>
         <div className="auth-switch">
           Already have an account? <span onClick={() => navigate('/signin')}>Sign In</span>
         </div>

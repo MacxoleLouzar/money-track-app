@@ -88,6 +88,9 @@ export default function Budget() {
     if (!statuses[id]) fetchStatus(id);
   };
 
+  // Firestore uses 'id', MongoDB used '_id' — normalise here
+  const bid = (b) => b.id || b._id;
+
   // ── Budget form ──────────────────────────────────────
   const toggleCategory = (key) => {
     setBudgetForm(f => ({
@@ -113,10 +116,10 @@ export default function Budget() {
     setBudgetSaving(true); setBudgetError('');
     const body = JSON.stringify({ ...budgetForm, amount: Number(budgetForm.amount) });
     if (editingBudget) {
-      const res = await fetch(`${BAPI}/${editingBudget._id}`, { method: 'PUT', headers, body });
+      const res = await fetch(`${BAPI}/${bid(editingBudget)}`, { method: 'PUT', headers, body });
       if (res.ok) toast('Budget updated successfully');
       else toast('Error: unable to update budget', 'error');
-      setStatuses(s => { const n = { ...s }; delete n[editingBudget._id]; return n; });
+      setStatuses(s => { const n = { ...s }; delete n[bid(editingBudget)]; return n; });
     } else {
       const res = await fetch(BAPI, { method: 'POST', headers, body });
       if (res.ok) toast('Budget created successfully');
@@ -132,12 +135,12 @@ export default function Budget() {
     const res = await fetch(`${BAPI}/${id}`, { method: 'DELETE', headers });
     if (res.ok) toast('Budget deleted');
     else toast('Error: unable to delete budget', 'error');
-    setBudgets(b => b.filter(x => x._id !== id));
+    setBudgets(b => b.filter(x => bid(x) !== id));
     if (expanded === id) setExpanded(null);
   };
 
   // ── Expense form ─────────────────────────────────────
-  const openAddExpense = (budgetId, budgetCategories) => {
+  const openAddExpense = (budgetId, budgetCategories) => { // budgetId is already the normalised id
     const cats = budgetCategories.length > 0 ? budgetCategories : ALL_CATEGORIES.map(c => c.key);
     setActiveBudgetId(budgetId);
     setExpCategory(cats[0]);
@@ -162,7 +165,7 @@ export default function Budget() {
     fetchStatus(activeBudgetId);
   };
 
-  const activeBudget = budgets.find(b => b._id === activeBudgetId);
+  const activeBudget = budgets.find(b => bid(b) === activeBudgetId);
   const expCats = activeBudget
     ? (activeBudget.categories.length > 0 ? activeBudget.categories : ALL_CATEGORIES.map(c => c.key))
     : [];
@@ -209,14 +212,14 @@ export default function Budget() {
       ) : (
         <div className="budget-list">
           {filteredBudgets.map(b => {
-            const st = statuses[b._id];
-            const isOpen = expanded === b._id;
+            const st = statuses[bid(b)];
+            const isOpen = expanded === bid(b);
             const cfg = st ? alertConfig(st.alert) : null;
             return (
-              <div key={b._id} className={`budget-card ${isOpen ? 'open' : ''}`}>
+              <div key={bid(b)} className={`budget-card ${isOpen ? 'open' : ''}`}>
 
                 {/* Card Header */}
-                <div className="budget-card-header" onClick={() => toggleExpand(b._id)}>
+                <div className="budget-card-header" onClick={() => toggleExpand(bid(b))}>
                   <div className="budget-card-info">
                     <div className="budget-card-name">{b.name}</div>
                     <div className="budget-card-meta">
@@ -225,12 +228,12 @@ export default function Budget() {
                     </div>
                   </div>
                   <div className="budget-card-actions" onClick={e => e.stopPropagation()}>
-                    <button className="btn btn-outline btn-sm" title="Add expense" onClick={() => openAddExpense(b._id, b.categories)}>
+                    <button className="btn btn-outline btn-sm" title="Add expense" onClick={() => openAddExpense(bid(b), b.categories)}>
                       <ShoppingBag size={13} />
                     </button>
                     <button className="btn btn-outline btn-sm" onClick={() => openEditBudget(b)}><Pencil size={13} /></button>
-                    <button className="btn btn-danger btn-sm" onClick={() => handleDeleteBudget(b._id)}><Trash2 size={13} /></button>
-                    <button className="btn btn-outline btn-sm" onClick={() => toggleExpand(b._id)}>
+                    <button className="btn btn-danger btn-sm" onClick={() => handleDeleteBudget(bid(b))}><Trash2 size={13} /></button>
+                    <button className="btn btn-outline btn-sm" onClick={() => toggleExpand(bid(b))}>
                       {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                     </button>
                   </div>
@@ -299,7 +302,7 @@ export default function Budget() {
                         )}
 
                         <button className="btn btn-primary" style={{ marginTop: '1rem', width: '100%', justifyContent: 'center' }}
-                          onClick={() => openAddExpense(b._id, b.categories)}>
+                          onClick={() => openAddExpense(bid(b), b.categories)}>
                           <Plus size={15} /> Add Expense to this Budget
                         </button>
                       </>

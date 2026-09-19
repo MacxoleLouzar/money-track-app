@@ -12,6 +12,7 @@
   },
   "homepage": "https://macxolelouzar.github.io/money-track-app",
   "dependencies": {
+    "@react-oauth/google": "^0.13.5",
     "@yudiel/react-qr-scanner": "^2.6.0",
     "lucide-react": "^1.28.0",
     "react": "^19.2.7",

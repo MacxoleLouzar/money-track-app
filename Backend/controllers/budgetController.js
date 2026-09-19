@@ -1,25 +1,10 @@
-import Budget from '../models/Budget.js';
-import {
-  Grocery, Transport, Lunch, Garment,
-  Furniture, Rent, Cosmetic, Takeout, DateExpense, Other
-} from '../models/Expense.js';
+import { db } from '../firebase.js';
+import { getPeriodRange } from './expenseController.js';
 
-/** Maps category keys to Mongoose expense models for spending calculations */
-const modelMap = {
-  grocery: Grocery, transport: Transport, lunch: Lunch, garment: Garment,
-  furniture: Furniture, rent: Rent, cosmetic: Cosmetic, takeout: Takeout,
-  date: DateExpense, other: Other,
-};
+const budgets = db.collection('budgets');
+const CATEGORIES = ['grocery', 'transport', 'lunch', 'garment', 'furniture', 'rent', 'cosmetic', 'takeout', 'date', 'other'];
 
-/**
- * Calculates the start and end dates for the current budget period.
- * For weekly budgets, advances the start date in 7-day increments from
- * the budget's creation date until the current period is reached.
- * @param {'daily'|'weekly'|'monthly'} period - Budget period type
- * @param {Date} startDate - The date the budget was created
- * @returns {{ start: Date, end: Date }} The current period's date range
- */
-const getPeriodRange = (period, startDate) => {
+const getBudgetPeriodRange = (period, startDate) => {
   const now = new Date();
   let start;
   if (period === 'daily') {
@@ -34,137 +19,89 @@ const getPeriodRange = (period, startDate) => {
   } else {
     start = new Date(now.getFullYear(), now.getMonth(), 1);
   }
-  return { start, end: now };
+  return { start: start.toISOString(), end: now.toISOString() };
 };
 
-/**
- * Creates a new named budget for the authenticated user.
- * @route POST /api/budget
- * @param {string} req.body.name - Budget name (e.g. "Monthly Groceries")
- * @param {number} req.body.amount - Budget limit in Rands
- * @param {'daily'|'weekly'|'monthly'} req.body.period - Tracking period
- * @param {string[]} [req.body.categories] - Category keys to track (empty = all)
- * @returns {201} The created budget document
- * @returns {400} If name, amount, or period is missing
- */
+/** @route POST /api/budget */
 export const createBudget = async (req, res) => {
   try {
     const { name, amount, period, categories } = req.body;
     if (!name || !amount || !period) return res.status(400).json({ message: 'name, amount and period required' });
-    const budget = await Budget.create({
-      user: req.user.id, name, amount, period,
-      categories: categories || [],
-      startDate: new Date(),
-    });
-    res.status(201).json(budget);
+    const data = { user: req.user.id, name, amount, period, categories: categories || [], startDate: new Date().toISOString(), createdAt: new Date().toISOString() };
+    const ref = await budgets.add(data);
+    res.status(201).json({ id: ref.id, ...data });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-/**
- * Returns all budgets for the authenticated user, sorted newest first.
- * @route GET /api/budget
- * @returns {200} Array of budget documents
- */
+/** @route GET /api/budget */
 export const getBudgets = async (req, res) => {
   try {
-    const budgets = await Budget.find({ user: req.user.id }).sort({ createdAt: -1 });
-    res.json(budgets);
+    const snap = await budgets.where('user', '==', req.user.id).orderBy('createdAt', 'desc').get();
+    res.json(snap.docs.map(d => ({ id: d.id, ...d.data() })));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-/**
- * Updates an existing budget's name, amount, period, or categories.
- * Only updates if the budget belongs to the authenticated user.
- * @route PUT /api/budget/:id
- * @param {string} req.params.id - MongoDB ObjectId of the budget
- * @returns {200} The updated budget document
- * @returns {404} If budget not found or not owned by user
- */
+/** @route PUT /api/budget/:id */
 export const updateBudget = async (req, res) => {
   try {
+    const doc = await budgets.doc(req.params.id).get();
+    if (!doc.exists || doc.data().user !== req.user.id) return res.status(404).json({ message: 'Not found' });
     const { name, amount, period, categories } = req.body;
-    const budget = await Budget.findOneAndUpdate(
-      { _id: req.params.id, user: req.user.id },
-      { name, amount, period, categories: categories || [] },
-      { new: true, runValidators: true }
-    );
-    if (!budget) return res.status(404).json({ message: 'Not found' });
-    res.json(budget);
+    const updates = { name, amount, period, categories: categories || [] };
+    await budgets.doc(req.params.id).update(updates);
+    res.json({ id: req.params.id, ...doc.data(), ...updates });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-/**
- * Deletes a budget by ID.
- * Only deletes if the budget belongs to the authenticated user.
- * @route DELETE /api/budget/:id
- * @param {string} req.params.id - MongoDB ObjectId of the budget
- * @returns {200} { message: 'Deleted' }
- */
+/** @route DELETE /api/budget/:id */
 export const deleteBudget = async (req, res) => {
   try {
-    await Budget.findOneAndDelete({ _id: req.params.id, user: req.user.id });
+    const doc = await budgets.doc(req.params.id).get();
+    if (!doc.exists || doc.data().user !== req.user.id) return res.status(404).json({ message: 'Not found' });
+    await budgets.doc(req.params.id).delete();
     res.json({ message: 'Deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-/**
- * Calculates the live spending status for a specific budget.
- * Queries all tracked expense categories within the current budget period,
- * computes total spent, remaining balance, percentage used, and alert level.
- * Alert levels: '50' (≥50%), '75' (≥75%), 'limit' (=100%), 'overdraft' (>100%).
- * @route GET /api/budget/:id/status
- * @param {string} req.params.id - MongoDB ObjectId of the budget
- * @returns {200} {
- *   _id, name, budget, period, categories,
- *   spent, remaining, percentage, alert,
- *   breakdown: [{ category, total, count }],
- *   periodStart
- * }
- * @returns {404} If budget not found or not owned by user
- */
+/** @route GET /api/budget/:id/status */
 export const getBudgetStatus = async (req, res) => {
   try {
-    const budget = await Budget.findOne({ _id: req.params.id, user: req.user.id });
-    if (!budget) return res.status(404).json({ message: 'Not found' });
+    const doc = await budgets.doc(req.params.id).get();
+    if (!doc.exists || doc.data().user !== req.user.id) return res.status(404).json({ message: 'Not found' });
+    const budget = doc.data();
+    const { start, end } = getBudgetPeriodRange(budget.period, budget.startDate);
+    const cats = budget.categories.length > 0 ? budget.categories : CATEGORIES;
 
-    const { start, end } = getPeriodRange(budget.period, budget.startDate);
-    const filter = { user: req.user.id, date: { $gte: start, $lte: end } };
-
-    const cats = budget.categories.length > 0 ? budget.categories : Object.keys(modelMap);
-    const results = await Promise.all(cats.map(async cat => {
-      const items = await modelMap[cat].find(filter);
-      const total = items.reduce((sum, i) => sum + (Number(i.price) || 0), 0);
-      return { category: cat, total, count: items.length };
+    const results = await Promise.all(cats.map(async (category) => {
+      const snap = await db.collection(`expenses_${category}`)
+        .where('user', '==', req.user.id)
+        .where('date', '>=', start)
+        .where('date', '<=', end)
+        .get();
+      const total = snap.docs.reduce((sum, d) => sum + (Number(d.data().price) || 0), 0);
+      return { category, total, count: snap.size };
     }));
 
     const spent = results.reduce((sum, r) => sum + r.total, 0);
     const pct = budget.amount > 0 ? (spent / budget.amount) * 100 : 0;
-
     let alert = null;
     if (pct >= 100) alert = spent > budget.amount ? 'overdraft' : 'limit';
     else if (pct >= 75) alert = '75';
     else if (pct >= 50) alert = '50';
 
     res.json({
-      _id: budget._id,
-      name: budget.name,
-      budget: budget.amount,
-      period: budget.period,
-      categories: budget.categories,
-      spent: +spent.toFixed(2),
-      remaining: +(budget.amount - spent).toFixed(2),
-      percentage: +pct.toFixed(1),
-      alert,
-      breakdown: results,
-      periodStart: start,
+      id: doc.id, name: budget.name, budget: budget.amount,
+      period: budget.period, categories: budget.categories,
+      spent: +spent.toFixed(2), remaining: +(budget.amount - spent).toFixed(2),
+      percentage: +pct.toFixed(1), alert, breakdown: results, periodStart: start,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

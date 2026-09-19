@@ -1,9 +1,14 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Modal, StyleSheet } from 'react-native';
 import { useState } from 'react';
 import { COLORS, shared } from '../utils/theme';
+import LocationPickerField from './LocationPickerField';
 
 export default function FormField({ field, value, onChange }) {
   const [pickerVisible, setPickerVisible] = useState(false);
+
+  if (field.type === 'location') {
+    return <LocationPickerField field={field} value={value} onChange={onChange} />;
+  }
 
   if (field.type === 'select') {
     return (

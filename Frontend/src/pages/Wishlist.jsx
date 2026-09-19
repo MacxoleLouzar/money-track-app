@@ -49,6 +49,8 @@ export default function Wishlist() {
 
   const { toasts, toast } = useToast();
 
+  const wid = (l) => l.id || l._id;
+
   const fetchLists = async () => {
     setLoading(true);
     const res = await fetch(WAPI, { headers });
@@ -70,9 +72,9 @@ export default function Wishlist() {
     if (!listForm.name.trim()) { setListError('Name is required.'); return; }
     setListSaving(true); setListError('');
     if (editingList) {
-      const res = await fetch(`${WAPI}/${editingList._id}`, { method: 'PUT', headers, body: JSON.stringify(listForm) });
+      const res = await fetch(`${WAPI}/${wid(editingList)}`, { method: 'PUT', headers, body: JSON.stringify(listForm) });
       const updated = await res.json();
-      if (res.ok) { toast('Wishlist updated successfully'); setLists(ls => ls.map(l => l._id === updated._id ? updated : l)); }
+      if (res.ok) { toast('Wishlist updated successfully'); setLists(ls => ls.map(l => wid(l) === wid(updated) ? updated : l)); }
       else toast('Error: unable to update wishlist', 'error');
     } else {
       const res = await fetch(WAPI, { method: 'POST', headers, body: JSON.stringify(listForm) });
@@ -88,7 +90,7 @@ export default function Wishlist() {
     const res = await fetch(`${WAPI}/${id}`, { method: 'DELETE', headers });
     if (res.ok) toast('Wishlist deleted');
     else toast('Error: unable to delete wishlist', 'error');
-    setLists(ls => ls.filter(l => l._id !== id));
+    setLists(ls => ls.filter(l => wid(l) !== id));
     if (expanded === id) setExpanded(null);
   };
 
@@ -101,7 +103,7 @@ export default function Wishlist() {
     setItemSaving(true);
     const res = await fetch(`${WAPI}/${activeListId}/items`, { method: 'POST', headers, body: JSON.stringify(itemForm) });
     const updated = await res.json();
-    if (res.ok) { toast('Item added'); setLists(ls => ls.map(l => l._id === updated._id ? updated : l)); }
+    if (res.ok) { toast('Item added'); setLists(ls => ls.map(l => wid(l) === wid(updated) ? updated : l)); }
     else toast('Error: unable to add item', 'error');
     setItemSaving(false);
     setShowItemForm(false);
@@ -110,7 +112,7 @@ export default function Wishlist() {
   const handleRemoveItem = async (listId, itemId) => {
     const res = await fetch(`${WAPI}/${listId}/items/${itemId}`, { method: 'DELETE', headers });
     const updated = await res.json();
-    if (res.ok) { toast('Item removed'); setLists(ls => ls.map(l => l._id === updated._id ? updated : l)); }
+    if (res.ok) { toast('Item removed'); setLists(ls => ls.map(l => wid(l) === wid(updated) ? updated : l)); }
     else toast('Error: unable to remove item', 'error');
   };
 
@@ -119,7 +121,7 @@ export default function Wishlist() {
       method: 'PATCH', headers, body: JSON.stringify({ bought: !current }),
     });
     const updated = await res.json();
-    setLists(ls => ls.map(l => l._id === updated._id ? updated : l));
+    setLists(ls => ls.map(l => wid(l) === wid(updated) ? updated : l));
   };
 
   const filteredLists = lists.filter(l => {
@@ -175,16 +177,16 @@ export default function Wishlist() {
       ) : (
         <div className="wl-list">
           {filteredLists.map(l => {
-            const isOpen = expanded === l._id;
+            const isOpen = expanded === wid(l);
             const bought = l.items.filter(i => i.bought).length;
             const total  = l.items.length;
             const pct    = total > 0 ? Math.round((bought / total) * 100) : 0;
 
             return (
-              <div key={l._id} className={`wl-card ${isOpen ? 'open' : ''}`}>
+              <div key={wid(l)} className={`wl-card ${isOpen ? 'open' : ''}`}>
 
                 {/* Header */}
-                <div className="wl-card-header" onClick={() => toggleExpand(l._id)}>
+                <div className="wl-card-header" onClick={() => toggleExpand(wid(l))}>
                   <div className="wl-card-info">
                     <div className="wl-card-name">{l.name}</div>
                     <div className="wl-card-meta">
@@ -193,9 +195,9 @@ export default function Wishlist() {
                     </div>
                   </div>
                   <div className="wl-card-actions" onClick={e => e.stopPropagation()}>
-                    <button className="btn btn-outline btn-sm" onClick={() => { setActiveListId(l._id); openAddItem(l._id); }}><Plus size={13} /></button>
+                    <button className="btn btn-outline btn-sm" onClick={() => { setActiveListId(wid(l)); openAddItem(wid(l)); }}><Plus size={13} /></button>
                     <button className="btn btn-outline btn-sm" onClick={() => openEditList(l)}><Pencil size={13} /></button>
-                    <button className="btn btn-danger btn-sm" onClick={() => handleDeleteList(l._id)}><Trash2 size={13} /></button>
+                    <button className="btn btn-danger btn-sm" onClick={() => handleDeleteList(wid(l))}><Trash2 size={13} /></button>
                     <button className="btn btn-outline btn-sm">{isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</button>
                   </div>
                 </div>
@@ -215,8 +217,8 @@ export default function Wishlist() {
                     ) : (
                       <ul className="wl-items">
                         {l.items.map(item => (
-                          <li key={item._id} className={`wl-item ${item.bought ? 'bought' : ''}`}>
-                            <button className="wl-tick" onClick={() => handleTick(l._id, item._id, item.bought)}>
+                          <li key={item.id || item._id} className={`wl-item ${item.bought ? 'bought' : ''}`}>
+                            <button className="wl-tick" onClick={() => handleTick(wid(l), item.id || item._id, item.bought)}>
                               {item.bought
                                 ? <CheckCircle2 size={20} color="#16a34a" />
                                 : <Circle size={20} color="#d1d5db" />}
@@ -229,7 +231,7 @@ export default function Wishlist() {
                                 <span className="wl-item-bought-at">✓ Bought {new Date(item.boughtAt).toLocaleDateString()}</span>
                               )}
                             </div>
-                            <button className="wl-remove" onClick={() => handleRemoveItem(l._id, item._id)}>
+                            <button className="wl-remove" onClick={() => handleRemoveItem(wid(l), item.id || item._id)}>
                               <X size={14} />
                             </button>
                           </li>

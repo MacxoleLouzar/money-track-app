@@ -1,122 +1,78 @@
-import {
-  Grocery, Transport, Lunch, Garment,
-  Furniture, Rent, Cosmetic, Takeout, DateExpense,
-  Other
-} from '../models/Expense.js';
+import { db } from '../firebase.js';
+import { uploadToStorage } from '../middleware/upload.js';
 import { autoTickByExpense } from './wishlistController.js';
 
-/** Maps category route param strings to their Mongoose models */
-const models = {
-  grocery: Grocery, transport: Transport, lunch: Lunch, garment: Garment,
-  furniture: Furniture, rent: Rent, cosmetic: Cosmetic, takeout: Takeout,
-  date: DateExpense, other: Other,
+const CATEGORIES = ['grocery', 'transport', 'lunch', 'garment', 'furniture', 'rent', 'cosmetic', 'takeout', 'date', 'other'];
+
+const col = (category) => db.collection(`expenses_${category}`);
+
+const uploadFiles = async (files) => {
+  const urls = {};
+  if (files?.image) urls.image = await uploadToStorage(files.image[0], 'images');
+  if (files?.slip) urls.slip = await uploadToStorage(files.slip[0], 'slips');
+  if (files?.invoice) urls.invoice = await uploadToStorage(files.invoice[0], 'invoices');
+  return urls;
 };
 
-/**
- * Creates a new expense in the specified category.
- * Handles optional file uploads (image, slip, invoice) via multer.
- * After saving, triggers autoTickByExpense to tick matching wishlist items.
- * @route POST /api/expenses/:category
- * @param {string} req.params.category - Expense category key (e.g. 'grocery')
- * @param {object} req.body - Expense fields (varies by category)
- * @param {object} [req.files] - Optional uploaded files: image, slip, invoice
- * @returns {201} The created expense document
- * @returns {400} If category is invalid
- */
+/** @route POST /api/expenses/:category */
 export const addExpense = async (req, res) => {
   try {
-    const Model = models[req.params.category];
-    if (!Model) return res.status(400).json({ message: 'Invalid category' });
-    const data = { ...req.body, user: req.user.id };
-    if (req.files?.image) data.image = req.files.image[0].path;
-    if (req.files?.slip) data.slip = req.files.slip[0].path;
-    if (req.files?.invoice) data.invoice = req.files.invoice[0].path;
-    const expense = await Model.create(data);
+    const { category } = req.params;
+    if (!CATEGORIES.includes(category)) return res.status(400).json({ message: 'Invalid category' });
+    const fileUrls = await uploadFiles(req.files);
+    const data = { ...req.body, ...fileUrls, user: req.user.id, date: new Date().toISOString() };
+    const ref = await col(category).add(data);
     const itemName = data.item || data.foodType || data.restaurant || data.from || null;
-    autoTickByExpense(req.user.id, req.params.category, itemName).catch(() => {});
-    res.status(201).json(expense);
+    autoTickByExpense(req.user.id, category, itemName).catch(() => {});
+    res.status(201).json({ id: ref.id, ...data });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-/**
- * Returns all expenses for the authenticated user in a given category,
- * sorted by date descending (newest first).
- * @route GET /api/expenses/:category
- * @param {string} req.params.category - Expense category key
- * @returns {200} Array of expense documents
- * @returns {400} If category is invalid
- */
+/** @route GET /api/expenses/:category */
 export const getExpenses = async (req, res) => {
   try {
-    const Model = models[req.params.category];
-    if (!Model) return res.status(400).json({ message: 'Invalid category' });
-    const expenses = await Model.find({ user: req.user.id }).sort({ date: -1 });
-    res.json(expenses);
+    const { category } = req.params;
+    if (!CATEGORIES.includes(category)) return res.status(400).json({ message: 'Invalid category' });
+    const snap = await col(category).where('user', '==', req.user.id).orderBy('date', 'desc').get();
+    res.json(snap.docs.map(d => ({ id: d.id, ...d.data() })));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-/**
- * Updates an existing expense by ID.
- * Only updates the expense if it belongs to the authenticated user.
- * Handles optional file replacements for image, slip, invoice.
- * @route PUT /api/expenses/:category/:id
- * @param {string} req.params.category - Expense category key
- * @param {string} req.params.id - MongoDB ObjectId of the expense
- * @param {object} req.body - Updated expense fields
- * @returns {200} The updated expense document
- * @returns {404} If expense not found or not owned by user
- */
+/** @route PUT /api/expenses/:category/:id */
 export const updateExpense = async (req, res) => {
   try {
-    const Model = models[req.params.category];
-    if (!Model) return res.status(400).json({ message: 'Invalid category' });
-    const data = { ...req.body };
-    if (req.files?.image) data.image = req.files.image[0].path;
-    if (req.files?.slip) data.slip = req.files.slip[0].path;
-    if (req.files?.invoice) data.invoice = req.files.invoice[0].path;
-    const updated = await Model.findOneAndUpdate(
-      { _id: req.params.id, user: req.user.id },
-      data,
-      { new: true, runValidators: true }
-    );
-    if (!updated) return res.status(404).json({ message: 'Not found' });
-    res.json(updated);
+    const { category, id } = req.params;
+    if (!CATEGORIES.includes(category)) return res.status(400).json({ message: 'Invalid category' });
+    const doc = await col(category).doc(id).get();
+    if (!doc.exists || doc.data().user !== req.user.id) return res.status(404).json({ message: 'Not found' });
+    const fileUrls = await uploadFiles(req.files);
+    const data = { ...req.body, ...fileUrls };
+    await col(category).doc(id).update(data);
+    res.json({ id, ...doc.data(), ...data });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-/**
- * Deletes an expense by ID.
- * Only deletes if the expense belongs to the authenticated user.
- * @route DELETE /api/expenses/:category/:id
- * @param {string} req.params.category - Expense category key
- * @param {string} req.params.id - MongoDB ObjectId of the expense
- * @returns {200} { message: 'Deleted' }
- */
+/** @route DELETE /api/expenses/:category/:id */
 export const deleteExpense = async (req, res) => {
   try {
-    const Model = models[req.params.category];
-    if (!Model) return res.status(400).json({ message: 'Invalid category' });
-    await Model.findOneAndDelete({ _id: req.params.id, user: req.user.id });
+    const { category, id } = req.params;
+    if (!CATEGORIES.includes(category)) return res.status(400).json({ message: 'Invalid category' });
+    const doc = await col(category).doc(id).get();
+    if (!doc.exists || doc.data().user !== req.user.id) return res.status(404).json({ message: 'Not found' });
+    await col(category).doc(id).delete();
     res.json({ message: 'Deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-/**
- * Builds a MongoDB date filter for a given period and optional reference date.
- * @param {'daily'|'weekly'|'monthly'|'yearly'} period - The time period
- * @param {string} userId - The authenticated user's ID
- * @param {string} [dateParam] - ISO date string to anchor the period (defaults to today)
- * @returns {{ user: string, date: { $gte: Date, $lte: Date } }} Mongoose query filter
- */
-const getPeriodFilter = (period, userId, dateParam) => {
+const getPeriodRange = (period, dateParam) => {
   const ref = dateParam ? new Date(dateParam) : new Date();
   let start, end;
   if (period === 'daily') {
@@ -132,26 +88,23 @@ const getPeriodFilter = (period, userId, dateParam) => {
     start = new Date(ref.getFullYear(), 0, 1);
     end = new Date(ref.getFullYear(), 11, 31, 23, 59, 59, 999);
   }
-  return { user: userId, date: { $gte: start, $lte: end } };
+  return { start: start.toISOString(), end: end.toISOString() };
 };
 
-/**
- * Returns a spending summary for a given time period across all categories.
- * Queries all 10 expense models in parallel and aggregates totals.
- * @route GET /api/expenses/summary/:period
- * @param {'daily'|'weekly'|'monthly'|'yearly'} req.params.period - Time period
- * @param {string} [req.query.date] - ISO date string to anchor the period
- * @returns {200} { period, grandTotal, breakdown: [{ category, total, count }] }
- */
+/** @route GET /api/expenses/summary/:period */
 export const getSummary = async (req, res) => {
   try {
     const { period } = req.params;
-    const filter = getPeriodFilter(period, req.user.id, req.query.date);
+    const { start, end } = getPeriodRange(period, req.query.date);
     const results = await Promise.all(
-      Object.entries(models).map(async ([name, Model]) => {
-        const items = await Model.find(filter);
-        const total = items.reduce((sum, i) => sum + (Number(i.price) || 0), 0);
-        return { category: name, total, count: items.length };
+      CATEGORIES.map(async (category) => {
+        const snap = await col(category)
+          .where('user', '==', req.user.id)
+          .where('date', '>=', start)
+          .where('date', '<=', end)
+          .get();
+        const total = snap.docs.reduce((sum, d) => sum + (Number(d.data().price) || 0), 0);
+        return { category, total, count: snap.size };
       })
     );
     const grandTotal = results.reduce((sum, r) => sum + r.total, 0);
@@ -160,3 +113,5 @@ export const getSummary = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+export { getPeriodRange };
